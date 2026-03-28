@@ -1,0 +1,59 @@
+﻿@model Aoun.ViewModels.AccidentSuccessViewModel
+@{
+    ViewData["Title"] = "تم قبول الحادث";
+    Layout = "_Layout";
+}
+
+<section class="container py-4" style="max-width: 650px;">
+    <div class="text-center mb-3">
+        <img src="~/images/success.png" alt="Success" style="width:90px; height:auto;" />
+        <h3 class="fw-bold mt-3">تم قبول الحادث</h3>
+        <p class="text-muted mb-0">يمكنك الآن مشاركة رمز الحادث مع السائق الآخر</p>
+    </div>
+
+    <div class="card shadow-sm mb-3" style="border-radius: 16px;">
+        <div class="card-body text-center">
+            <div class="text-muted small mb-2">رقم الحادث</div>
+
+            <div class="d-flex justify-content-center align-items-center gap-2">
+                <span class="fw-bold" style="font-size: 22px;">@Model.AccidentCode</span>
+
+                <button type="button" class="btn btn-light border"
+                        onclick="copyText('@Model.AccidentCode')">
+                    نسخ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4" style="border-radius: 16px;">
+        <div class="card-body text-center">
+            <div class="text-muted small mb-2">امسح الكود للمشاركة</div>
+
+            <!-- خيار 1: QR من خدمة خارجية (سريع) -->
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=@Model.AccidentCode"
+                 alt="QR Code"
+                 style="width:220px; height:220px;" />
+
+            <!-- خيار 2 (أفضل لاحقًا): سوّي endpoint داخلي يولد QR -->
+            @* <img src="@Url.Action("Qr","Accident", new { code = Model.AccidentCode })" alt="QR Code" /> *@
+        </div>
+    </div>
+
+    <a asp-controller="Accident"
+       asp-action="Waiting"
+       asp-route-accidentId="@Model.AccidentId"
+       asp-route-role="1"
+       class="hp-btn-confirm">
+        متابعة
+    </a>
+
+</section>
+
+<script>
+    function copyText(text) {
+        navigator.clipboard.writeText(text)
+            .then(() => alert("تم النسخ"))
+            .catch(() => alert("تعذر النسخ"));
+    }
+</script>

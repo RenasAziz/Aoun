@@ -1,0 +1,83 @@
+﻿@model Aoun.ViewModels.DriverFeedbackViewModel
+
+@{
+    ViewData["Title"] = "تقييم التجربة";
+}
+
+<div class="feedback-page" dir="rtl">
+    <div class="top-strip"></div>
+
+    <div class="page-shell">
+        <div class="icon-wrap">
+            <div class="icon-circle">
+                <svg width="46" height="46" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 3L13.8 8.2L19 10L13.8 11.8L12 17L10.2 11.8L5 10L10.2 8.2L12 3Z"
+                          stroke="black" stroke-width="1.7" stroke-linejoin="round" />
+                    <path d="M18.5 3.5L19.2 5.3L21 6L19.2 6.7L18.5 8.5L17.8 6.7L16 6L17.8 5.3L18.5 3.5Z"
+                          fill="black" />
+                    <path d="M6 14.5L6.7 16.3L8.5 17L6.7 17.7L6 19.5L5.3 17.7L3.5 17L5.3 16.3L6 14.5Z"
+                          fill="black" />
+                </svg>
+            </div>
+        </div>
+
+        <h1 class="page-title">تقييم التجربة</h1>
+        <p class="page-subtitle">
+            يسرنا سماع رأيك حول نتيجة التقرير ودرجة رضاك عن النظام.
+        </p>
+
+        <form asp-action="Feedback" method="post" class="feedback-form">
+            @Html.AntiForgeryToken()
+
+            <input type="hidden" asp-for="AccidentId" />
+            <input type="hidden" asp-for="Role" />
+
+            <div asp-validation-summary="ModelOnly" class="validation-box"></div>
+
+            <div class="card-box">
+                <div class="card-title">مدى رضاك عن القرار</div>
+
+                <div class="emoji-row">
+                    <span>😡</span>
+                    <span>🙁</span>
+                    <span>😐</span>
+                    <span>🙂</span>
+                    <span>😀</span>
+                </div>
+
+                <div class="slider-wrap">
+                    <input asp-for="SatisfactionLevel"
+                           type="range"
+                           min="1"
+                           max="5"
+                           step="1"
+                           class="feedback-slider"
+                           id="satisfactionSlider" />
+                </div>
+
+                <div class="slider-hint">سيرى محقق الحادث نتيجة هذا التقييم</div>
+                <span asp-validation-for="SatisfactionLevel" class="field-validation"></span>
+            </div>
+
+            <div class="card-box comments-card">
+                <div class="card-title">ملاحظاتك وتعليقاتك</div>
+
+                <textarea asp-for="Comment"
+                          class="feedback-textarea"
+                          placeholder="اكتب ملاحظاتك هنا ..."></textarea>
+
+                <div class="comment-hint">ملاحظاتك تساعدنا على تحسين دقة القرارات المستقبلية</div>
+                <span asp-validation-for="Comment" class="field-validation"></span>
+            </div>
+
+            <button type="submit" class="submit-btn">إرسال التقييم</button>
+        </form>
+    </div>
+</div>
+
+
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

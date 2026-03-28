@@ -1,0 +1,33 @@
+﻿@{
+    ViewData["Title"] = "تم التحديث";
+    Layout = "_AuthLayout";
+}
+
+<div class="auth-page">
+    <div class="auth-card">
+
+        <!-- Success icon -->
+        <div style="margin: 24px 0;">
+            <i class="fa-solid fa-circle-check"
+               style="font-size:64px;color:#4CAF50;"></i>
+        </div>
+
+        <div class="auth-title">تم تحديث كلمة المرور بنجاح</div>
+        <div class="auth-sub">
+            يمكنك الآن تسجيل الدخول باستخدام كلمة المرور الجديدة
+        </div>
+
+        <!-- Manual login redirect -->
+        <a href="/Auth/Login" class="auth-btn" style="margin-top:20px">
+            تسجيل الدخول
+        </a>
+    </div>
+</div>
+
+<script>
+    // Automatically redirects to login after 6 seconds
+    setTimeout(() => {
+        window.location.href = "/Auth/Login";
+    }, 6000);
+</script>
+

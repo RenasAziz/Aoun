@@ -1,0 +1,93 @@
+﻿@model Aoun.ViewModels.QuestionsWizardViewModel
+@{
+    ViewData["Title"] = "الأسئلة الأساسية";
+    Layout = "_Layout";
+}
+
+@{
+    var wizardAction = (ViewData["WizardAction"] as string) ?? "Questions";
+    var wizardTitle = (ViewData["WizardTitle"] as string) ?? "الأسئلة الأساسية";
+}
+
+<section class="qz">
+    <!-- top (icon + step) -->
+    <div class="qz__top">
+        <div class="qz__heroIconWrap">
+            <!-- استخدمي أيقونة FontAwesome لو عندك، أو خليها img -->
+            <i class="fa-solid fa-clipboard-list qz__heroIcon"></i>
+        </div>
+
+        <div class="qz__step">@Model.Index من @Model.Total</div>
+        <h2 class="qz__title">@wizardTitle</h2>
+        <div class="qz__sub">أجب عن الأسئلة التالية لمساعدتنا على فهم الحادث</div>
+    </div>
+
+
+    <form asp-action="@wizardAction" asp-controller="Accident" method="post" class="qz__card">
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" asp-for="AccidentId" />
+        <input type="hidden" asp-for="Role" />
+        <input type="hidden" asp-for="QuestionId" />
+        <input type="hidden" asp-for="Index" />
+        <input type="hidden" asp-for="Total" />
+        <input type="hidden" asp-for="QuestionCode" />
+
+        <div class="qz__q">
+            @Model.QuestionTextAr
+            <span class="qz__req">*</span>
+        </div>
+
+        <div class="qz__err">
+            @Html.ValidationMessageFor(m => m.SelectedOptionCode)
+        </div>
+
+        <div class="qz__opts">
+            @for (int i = 0; i < Model.Options.Count; i++)
+            {
+                var opt = Model.Options[i];
+                var id = $"opt_{i}";
+
+                <label class="qz__opt" for="@id">
+                    <input id="@id"
+                           type="radio"
+                           name="SelectedOptionCode"
+                           value="@opt.Code"
+                    @(Model.SelectedOptionCode == opt.Code ? "checked" : "") />
+                    <span class="qz__optText">@opt.TextAr</span>
+                </label>
+            }
+        </div>
+
+        <div class="qz__actions">
+          
+
+            <button type="submit" name="nav" value="next" class="qz__btn qz__btn--primary" id="nextBtn" disabled>
+                @(Model.IsLast ? "إنهاء" : "متابعة")
+            </button>
+
+            @if (Model.CanGoBack)
+            {
+                <button type="submit" name="nav" value="back" class="qz__btn qz__btn--ghost">
+                    رجوع للخطوة السابقة
+                </button>
+            }
+        </div>
+    </form>
+</section>
+
+@section Scripts {
+    <script>
+        (function () {
+            var nextBtn = document.getElementById("nextBtn");
+            function update() {
+                var checked = document.querySelector('input[name="SelectedOptionCode"]:checked');
+                nextBtn.disabled = !checked;
+            }
+            document.querySelectorAll('input[name="SelectedOptionCode"]').forEach(function (r) {
+                r.addEventListener('change', update);
+            });
+            update();
+        })();
+    </script>
+}

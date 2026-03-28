@@ -1,0 +1,119 @@
+﻿@model Aoun.ViewModels.Accident.AccidentDetailsViewModel
+
+@{
+    ViewData["Title"] = "تفاصيل حادث سابق";
+}
+
+<div class="accident-details-page">
+
+    <!-- Accident Card -->
+    <div class="accident-card">
+
+        <!-- Back arrow -->
+        <a href="javascript:history.back()" class="auth-back">
+            <!-- Returns to previous page -->
+            <img src="/images/back-arrow.png" alt="Back" />
+        </a>
+
+        <!-- Header -->
+        <div class="page-header-card">
+            <h3>تفاصيل حادث سابق</h3>
+        </div>
+
+        <!-- Accident Number -->
+        <div class="accident-id-row">
+            <span class="label">رقم الحادث</span>
+            
+            <span class="acc-number">
+                ACC-@Model.AccidentNumber
+            </span>
+
+        </div>
+
+        <hr />
+
+
+        <!-- Status -->
+        <div class="status-row">
+            <span class="label">نوع الحادث والنتيجة</span>
+
+            <span class="status-badge">
+                @Model.Status
+            </span>
+        </div>
+
+
+        <!-- Accident Type -->
+        <div class="type-row">
+            <span class="type-label">نوع الحادث المحدد:</span>
+
+            <span class="type-value">
+                @Model.AccidentType
+            </span>
+        </div>
+
+
+        <!-- Fault Percent -->
+        <div class="fault-row">
+            <span>نسبة الخطأ :</span>
+
+            <span class="fault-value">
+                @Model.FaultPercentage %
+            </span>
+        </div>
+
+
+        <!-- Vehicle Section -->
+        <div class="vehicle-section">
+            <div class="vehicle-info">
+                <div>مركبتك</div>
+                <div>سوبربان 2024</div>
+                <div>أ ب ج 1234 - أبيض</div>
+                <div class="damage">الجهة الأمامية</div>
+            </div>
+
+
+            <div class="vehicle-image">
+                @if (Model.ImagePaths.Any())
+                {
+                    <img src="@Model.ImagePaths.First()" />
+                }
+                else
+                {
+                    <img src="/images/logo.png" />
+                }
+            </div>
+
+        </div>
+
+
+        <!-- Date / Time / Location -->
+        <div class="info-grid">
+
+            <div class="info-box">
+                <div class="label">الوقت</div>
+                <div>@Model.AccidentTime</div>
+            </div>
+
+            <div class="info-box">
+                <div class="label">التاريخ</div>
+                <div>@Model.AccidentDate</div>
+            </div>
+
+            <div class="info-box full">
+                <div class="label">الموقع</div>
+                <div>@Model.Location</div>
+            </div>
+
+        </div>
+
+
+        <!-- Damage location -->
+        <div class="damage-location">
+            <span>موقع الضرر:</span>
+            <span>الجهة الأمامية</span>
+        </div>
+
+    </div>
+
+</div>

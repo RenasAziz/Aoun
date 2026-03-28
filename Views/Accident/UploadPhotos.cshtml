@@ -1,0 +1,374 @@
+﻿@model Aoun.ViewModels.UploadPhotosViewModel
+@{
+    ViewData["Title"] = "رفع الصور";
+    Layout = "_Layout";
+}
+
+<section class="up">
+    <div class="up__heroIconWrap" aria-hidden="true">
+        <div class="up__heroIcon"></div>
+    </div>
+
+    <h2 class="up__title">رفع الصور</h2>
+    <p class="up__sub">يرجى رفع الصور المطلوبة لإكمال تقييم الحادث</p>
+
+    <form asp-controller="Accident" asp-action="UploadPhotos" method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="AccidentId" />
+        <input type="hidden" asp-for="Role" />
+
+        <!-- Card 1: Damage -->
+        <div class="up__card">
+            <div class="up__cardTitle">صور موقع الضرر</div>
+            <div class="up__cardSub"> قم برفع صور واضحة للضرر الرئيسي اذا وجد. </div>
+
+            <div class="up__grid">
+                <label class="up__box" for="DamagePhoto1">
+                    <input asp-for="DamagePhoto1"
+                           type="file"
+                           accept="image/*"
+                           capture="environment"
+                           inputmode="none"
+                           id="DamagePhoto1"
+                           hidden />
+
+                    <div class="up__boxContent">
+                        <div class="up__boxIcon" aria-hidden="true">
+                            <svg class="up__cam" viewBox="0 0 24 24" fill="none">
+                                <path d="M8.5 7.5l1.2-2h4.6l1.2 2H19a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2h3.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+                                <path d="M12 17a3.2 3.2 0 1 0 0-6.4A3.2 3.2 0 0 0 12 17Z" stroke="currentColor" stroke-width="1.6" />
+                            </svg>
+                        </div>
+                        <div class="up__boxText">اضغط لالتقاط/رفع صورة الضرر</div>
+                    </div>
+
+                    <img class="up__preview" id="previewDamage1" alt="" />
+
+                    <button type="button"
+                            class="up__deleteBtn"
+                            data-clear="DamagePhoto1"
+                            aria-label="حذف الصورة">
+                        ×
+                    </button>
+                </label>
+
+                <label class="up__box" for="DamagePhoto2">
+                    <input asp-for="DamagePhoto2"
+                           type="file"
+                           accept="image/*"
+                           capture="environment"
+                           inputmode="none"
+                           id="DamagePhoto2"
+                           hidden />
+
+                    <div class="up__boxContent">
+                        <div class="up__boxIcon" aria-hidden="true">
+                            <svg class="up__cam" viewBox="0 0 24 24" fill="none">
+                                <path d="M8.5 7.5l1.2-2h4.6l1.2 2H19a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2h3.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+                                <path d="M12 17a3.2 3.2 0 1 0 0-6.4A3.2 3.2 0 0 0 12 17Z" stroke="currentColor" stroke-width="1.6" />
+                            </svg>
+                        </div>
+                        <div class="up__boxText">اضغط لالتقاط/رفع صورة الضرر</div>
+                    </div>
+
+                    <img class="up__preview" id="previewDamage2" alt="" />
+                   
+
+                    <button type="button"
+                            class="up__deleteBtn"
+                            data-clear="DamagePhoto2"
+                            aria-label="حذف الصورة">
+                        ×
+                    </button>
+                </label>
+            </div>
+            <div class="up__optionalNote">ملاحظة: اذا لم تتضرر سيارتك، هذه الصورتين غير مطلوبة منك.</div>
+        </div>
+
+        <!-- Card 2: Car sides -->
+        <div class="up__card mt-3">
+            <div class="up__cardTitle">صور جوانب السيارة</div>
+            <div class="up__cardSub">قم برفع الصور الأربع لتغطية السيارة كاملة.</div>
+
+            <div class="up__grid4">
+                <label class="up__box" for="FrontPhoto">
+                    <input asp-for="FrontPhoto" type="file" accept="image/*" capture="environment" inputmode="none" id="FrontPhoto" hidden />
+                    <div class="up__boxContent">
+                        <div class="up__boxIcon" aria-hidden="true">
+                            <svg class="up__cam" viewBox="0 0 24 24" fill="none">
+                                <path d="M8.5 7.5l1.2-2h4.6l1.2 2H19a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2h3.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+                                <path d="M12 17a3.2 3.2 0 1 0 0-6.4A3.2 3.2 0 0 0 12 17Z" stroke="currentColor" stroke-width="1.6" />
+                            </svg>
+                        </div>
+                        <div class="up__boxText">الواجهة الأمامية</div>
+                    </div>
+                    <img class="up__preview" id="previewFront" alt="" />
+                    <button type="button" class="up__deleteBtn" data-clear="FrontPhoto" aria-label="حذف الصورة">×</button>
+                </label>
+
+                <label class="up__box" for="BackPhoto">
+                    <input asp-for="BackPhoto" type="file" accept="image/*" capture="environment" inputmode="none" id="BackPhoto" hidden />
+                    <div class="up__boxContent">
+                        <div class="up__boxIcon" aria-hidden="true">
+                            <svg class="up__cam" viewBox="0 0 24 24" fill="none">
+                                <path d="M8.5 7.5l1.2-2h4.6l1.2 2H19a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2h3.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+                                <path d="M12 17a3.2 3.2 0 1 0 0-6.4A3.2 3.2 0 0 0 12 17Z" stroke="currentColor" stroke-width="1.6" />
+                            </svg>
+                        </div>
+                        <div class="up__boxText">الواجهة الخلفية</div>
+                    </div>
+                    <img class="up__preview" id="previewBack" alt="" />
+                    <button type="button" class="up__deleteBtn" data-clear="BackPhoto" aria-label="حذف الصورة">×</button>
+                </label>
+
+                <label class="up__box" for="LeftPhoto">
+                    <input asp-for="LeftPhoto" type="file" accept="image/*" capture="environment" inputmode="none" id="LeftPhoto" hidden />
+                    <div class="up__boxContent">
+                        <div class="up__boxIcon" aria-hidden="true">
+                            <svg class="up__cam" viewBox="0 0 24 24" fill="none">
+                                <path d="M8.5 7.5l1.2-2h4.6l1.2 2H19a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2h3.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+                                <path d="M12 17a3.2 3.2 0 1 0 0-6.4A3.2 3.2 0 0 0 12 17Z" stroke="currentColor" stroke-width="1.6" />
+                            </svg>
+                        </div>
+                        <div class="up__boxText">الجانب الأيسر</div>
+                    </div>
+                    <img class="up__preview" id="previewLeft" alt="" />
+                    <button type="button" class="up__deleteBtn" data-clear="LeftPhoto" aria-label="حذف الصورة">×</button>
+                </label>
+
+                <label class="up__box" for="RightPhoto">
+                    <input asp-for="RightPhoto" type="file" accept="image/*" capture="environment" inputmode="none" id="RightPhoto" hidden />
+                    <div class="up__boxContent">
+                        <div class="up__boxIcon" aria-hidden="true">
+                            <svg class="up__cam" viewBox="0 0 24 24" fill="none">
+                                <path d="M8.5 7.5l1.2-2h4.6l1.2 2H19a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2h3.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+                                <path d="M12 17a3.2 3.2 0 1 0 0-6.4A3.2 3.2 0 0 0 12 17Z" stroke="currentColor" stroke-width="1.6" />
+                            </svg>
+                        </div>
+                        <div class="up__boxText">الجانب الأيمن</div>
+                    </div>
+                    <img class="up__preview" id="previewRight" alt="" />
+                    <button type="button" class="up__deleteBtn" data-clear="RightPhoto" aria-label="حذف الصورة">×</button>
+                </label>
+            </div>
+        </div>
+
+        <!-- Card 3: Plate + Scene -->
+        <div class="up__card mt-3">
+            <div class="up__cardTitle">صور التحقق</div>
+            <div class="up__cardSub">لوحة السيارة + صورة عامة لموقع الحادث.</div>
+
+            <div class="up__grid">
+                <label class="up__box" for="PlatePhoto">
+                    <input asp-for="PlatePhoto" type="file" accept="image/*" capture="environment" inputmode="none" id="PlatePhoto" hidden />
+                    <div class="up__boxContent">
+                        <div class="up__boxIcon" aria-hidden="true">
+                            <svg class="up__cam" viewBox="0 0 24 24" fill="none">
+                                <path d="M8.5 7.5l1.2-2h4.6l1.2 2H19a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2h3.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+                                <path d="M12 17a3.2 3.2 0 1 0 0-6.4A3.2 3.2 0 0 0 12 17Z" stroke="currentColor" stroke-width="1.6" />
+                            </svg>
+                        </div>
+                        <div class="up__boxText">لوحة السيارة</div>
+                    </div>
+                    <img class="up__preview" id="previewPlate" alt="" />
+                    <button type="button" class="up__deleteBtn" data-clear="PlatePhoto" aria-label="حذف الصورة">×</button>
+                </label>
+
+                <label class="up__box" for="ScenePhoto">
+                    <input asp-for="ScenePhoto" type="file" accept="image/*" capture="environment" inputmode="none" id="ScenePhoto" hidden />
+                    <div class="up__boxContent">
+                        <div class="up__boxIcon" aria-hidden="true">
+                            <svg class="up__cam" viewBox="0 0 24 24" fill="none">
+                                <path d="M8.5 7.5l1.2-2h4.6l1.2 2H19a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2h3.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+                                <path d="M12 17a3.2 3.2 0 1 0 0-6.4A3.2 3.2 0 0 0 12 17Z" stroke="currentColor" stroke-width="1.6" />
+                            </svg>
+                        </div>
+                        <div class="up__boxText">صورة عامة لموقع الحادث</div>
+                    </div>
+                    <img class="up__preview" id="previewScene" alt="" />
+                    <button type="button" class="up__deleteBtn" data-clear="ScenePhoto" aria-label="حذف الصورة">×</button>
+                </label>
+            </div>
+        </div>
+
+        <!-- hidden validation summary (used for server returned errors only) -->
+        <div id="serverErrors" class="d-none">
+            @Html.ValidationSummary()
+        </div>
+
+        <button type="submit" class="up__btn mt-3" id="submitUpload">
+            متابعة
+        </button>
+    </form>
+</section>
+
+<!-- Validation Modal -->
+<div class="modal fade" id="validationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content up-modal">
+            <div class="modal-header up-modal__header">
+                <button type="button"
+                        class="btn-close up-modal__close"
+                        data-bs-dismiss="modal"
+                        aria-label="إغلاق"></button>
+
+                <h5 class="modal-title up-modal__title">
+                    تأكيد رفع الصور
+                </h5>
+            </div>
+
+
+
+            <div class="modal-body">
+                <p class="up-modal__sub">يرجى إكمال الصور التالية قبل المتابعة:</p>
+                <ul class="up-modal__list" id="validationList"></ul>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">حسنًا</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+
+        // ==========================
+        // Preview + Delete (UI only)
+        // ==========================
+        function setPreview(input, img, box) {
+            if (!input.files || input.files.length === 0) return;
+
+            var file = input.files[0];
+            var url = URL.createObjectURL(file);
+
+            img.src = url;
+            img.style.display = "block";
+            box.classList.add("up__box--hasImage");
+        }
+
+        function clearPreview(input, img, box) {
+            input.value = "";
+            img.removeAttribute("src");
+            img.style.display = "none";
+            box.classList.remove("up__box--hasImage");
+        }
+
+        function bindBox(inputId, imgId) {
+            var input = document.getElementById(inputId);
+            var img = document.getElementById(imgId);
+            var box = input.closest(".up__box");
+
+            input.addEventListener("change", function () {
+                setPreview(input, img, box);
+            });
+
+            var delBtn = box.querySelector('.up__deleteBtn[data-clear="' + inputId + '"]');
+            if (delBtn) {
+                delBtn.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    clearPreview(input, img, box);
+                });
+            }
+        }
+
+        bindBox("DamagePhoto1", "previewDamage1");
+        bindBox("DamagePhoto2", "previewDamage2");
+        bindBox("FrontPhoto", "previewFront");
+        bindBox("BackPhoto", "previewBack");
+        bindBox("LeftPhoto", "previewLeft");
+        bindBox("RightPhoto", "previewRight");
+        bindBox("PlatePhoto", "previewPlate");
+        bindBox("ScenePhoto", "previewScene");
+
+        // ==========================
+        // Modal Helpers
+        // ==========================
+        function openModalWithMessages(messages) {
+            var list = document.getElementById("validationList");
+            list.innerHTML = "";
+
+            messages.forEach(function (msg) {
+                var item = document.createElement("li");
+
+                var dot = document.createElement("span");
+                dot.className = "up-modal__dot";
+
+                var text = document.createElement("div");
+                text.className = "up-modal__text";
+                text.textContent = msg;
+
+                item.appendChild(dot);
+                item.appendChild(text);
+                list.appendChild(item);
+            });
+
+            var modal = new bootstrap.Modal(document.getElementById("validationModal"));
+            modal.show();
+        }
+
+        // ==========================
+        // Client-side validation BEFORE POST
+        // ==========================
+        function validateBeforeSubmit() {
+            var required = [
+                { id: "FrontPhoto", msg: "الرجاء رفع صورة الواجهة الأمامية" },
+                { id: "BackPhoto", msg: "الرجاء رفع صورة الواجهة الخلفية" },
+                { id: "LeftPhoto", msg: "الرجاء رفع صورة الجانب الأيسر" },
+                { id: "RightPhoto", msg: "الرجاء رفع صورة الجانب الأيمن" },
+                { id: "PlatePhoto", msg: "الرجاء رفع صورة لوحة السيارة" },
+                { id: "ScenePhoto", msg: "الرجاء رفع صورة عامة لموقع الحادث" }
+            ];
+
+            var missing = [];
+
+            required.forEach(function (r) {
+                var input = document.getElementById(r.id);
+                if (!input || !input.files || input.files.length === 0) {
+                    missing.push(r.msg);
+                }
+            });
+
+            if (missing.length > 0) {
+                openModalWithMessages(missing);
+                return false;
+            }
+
+            return true;
+        }
+
+        var submitBtn = document.getElementById("submitUpload");
+        var form = submitBtn ? submitBtn.closest("form") : null;
+
+        if (form) {
+            form.addEventListener("submit", function (e) {
+                if (!validateBeforeSubmit()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            });
+        }
+
+        // ==========================
+        // Server-side errors (only when FromPost == true)
+        // ==========================
+        var fromPost = @((ViewBag.FromPost as bool?) == true ? "true" : "false");
+        if (fromPost) {
+            var holder = document.getElementById("serverErrors");
+            if (holder) {
+                var lis = holder.querySelectorAll("li");
+                if (lis && lis.length > 0) {
+                    var msgs = [];
+                    lis.forEach(function (li) {
+                        var m = (li.textContent || "").trim();
+                        if (m) msgs.push(m);
+                    });
+                    if (msgs.length > 0) openModalWithMessages(msgs);
+                }
+            }
+        }
+
+    })();
+</script>

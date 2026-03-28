@@ -1,0 +1,130 @@
+﻿@model Aoun.ViewModels.Auth.OtpViewModel
+<!--ViewModel contains 4 properties: D1, D2, D3, D4-->
+
+@{
+    ViewData["Title"] = "رمز التحقق";
+    Layout = "_AuthLayout";
+}
+
+<div class="auth-page">
+    <div class="auth-card">
+
+        <!-- Back arrow -->
+        <a href="javascript:history.back()" class="auth-back">
+            <img src="/images/back-arrow.png" alt="Back" />
+        </a>
+
+        <img src="/images/logo.png" class="auth-logo" />
+
+        <div class="auth-title">رمز التحقق</div>
+        <div class="auth-sub">أدخل الرمز المكوّن من 4 أرقام</div>
+
+        @if (ViewBag.Error != null)
+        {
+            <!-- Displays incorrect OTP error -->
+            <div class="auth-error">@ViewBag.Error</div>
+        }
+
+        <form asp-action="Otp" method="post">
+
+            <!-- OTP inputs -->
+            <div class="otp-inputs" dir="ltr">
+                <input asp-for="D1" maxlength="1" inputmode="numeric" />
+                <input asp-for="D2" maxlength="1" inputmode="numeric" />
+                <input asp-for="D3" maxlength="1" inputmode="numeric" />
+                <input asp-for="D4" maxlength="1" inputmode="numeric" />
+            </div>
+
+            <button class="auth-btn">تأكيد</button>
+
+            <!-- Resend section -->
+            <div class="otp-resend">
+                <span class="otp-timer" id="otpTimer">00:30</span>
+                <!-- Countdown timer -->
+
+                <button type="button"
+                        id="resendBtn"
+                        class="otp-resend-btn"
+                        disabled>
+                    إعادة إرسال الرمز
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!--
+- Moves focus automatically to next input.
+- Allows backspace to return to previous box.
+- 30-second countdown timer.
+- Enables resend button when timer ends.
+- Uses fetch("/Auth/ResendOtp") to request new OTP.
+-->
+<script>
+    /* ===============================
+       OTP INPUT BEHAVIOR
+       =============================== */
+    const inputs = document.querySelectorAll(".otp-inputs input");
+
+    inputs.forEach((input, index) => {
+        input.addEventListener("input", () => {
+            input.value = input.value.replace(/[^0-9]/g, "");
+            if (input.value && inputs[index + 1]) {
+                inputs[index + 1].focus();
+            }
+        });
+
+        input.addEventListener("keydown", (e) => {
+            if (e.key === "Backspace" && !input.value && inputs[index - 1]) {
+                inputs[index - 1].focus();
+            }
+        });
+    });
+
+    /* ===============================
+       OTP RESEND TIMER
+       =============================== */
+    let timeLeft = 30;
+    const timerEl = document.getElementById("otpTimer");
+    const resendBtn = document.getElementById("resendBtn");
+
+    function startTimer() {
+        resendBtn.disabled = true;
+        resendBtn.classList.remove("active");
+
+        const interval = setInterval(() => {
+            timeLeft--;
+
+            const minutes = String(Math.floor(timeLeft / 30)).padStart(2, "0");
+            const seconds = String(timeLeft % 30).padStart(2, "0");
+            timerEl.textContent = `${minutes}:${seconds}`;
+
+            if (timeLeft <= 0) {
+                clearInterval(interval);
+                timerEl.textContent = "00:00";
+                resendBtn.disabled = false;
+                resendBtn.classList.add("active");
+            }
+        }, 1000);
+    }
+
+        resendBtn.addEventListener("click", () => {
+        if (resendBtn.disabled) return;
+
+        fetch("/Auth/ResendOtp", {
+            method: "POST",
+            headers: {
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        }).then(() => {
+            timeLeft = 30;
+            startTimer();
+        });
+    });
+
+    startTimer();
+</script>
+
+
+

@@ -1,0 +1,58 @@
+﻿@model Aoun.ViewModels.JoinSuccessViewModel
+@{
+    ViewData["Title"] = "تم الانضمام بنجاح";
+    Layout = "_Layout";
+}
+
+<section class="joinOk">
+    <div class="joinOk__card">
+
+        <div class="joinOk__iconWrap" aria-hidden="true">
+            <div class="joinOk__circle">
+                <span class="joinOk__check">✓</span>
+            </div>
+        </div>
+
+        <h3 class="joinOk__title">تم الانضمام بنجاح</h3>
+        <p class="joinOk__sub">يمكنك الآن البدء في تقديم تفاصيل الحادث</p>
+
+        <div class="joinOk__info">
+            <div class="joinOk__row">
+                <span class="joinOk__k">رقم الحادث</span>
+                <span class="joinOk__v">@Model.AccidentCode</span>
+            </div>
+
+            <div class="joinOk__row">
+                <span class="joinOk__k">الموقع</span>
+                <span class="joinOk__v">@Model.Location</span>
+            </div>
+
+            <div class="joinOk__row">
+                <span class="joinOk__k">التاريخ</span>
+                <span class="joinOk__v">@Model.AccidentDate</span>
+            </div>
+
+            <div class="joinOk__row">
+                <span class="joinOk__k">الوقت</span>
+                <span class="joinOk__v">@Model.AccidentTime</span>
+            </div>
+
+            <div class="joinOk__row">
+                <span class="joinOk__k">دورك</span>
+                <span class="joinOk__v">@Model.RoleText</span>
+            </div>
+        </div>
+
+        <a asp-controller="Accident"
+           asp-action="Waiting"
+           asp-route-accidentId="@Model.AccidentId"
+           asp-route-role="@Model.Role"
+           class="joinOk__btnPrimary">
+            متابعة
+        </a>
+
+        <a asp-controller="Home" asp-action="HomePage" class="joinOk__btnOutline">
+            إلغاء
+        </a>
+    </div>
+</section>

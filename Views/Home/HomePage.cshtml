@@ -1,0 +1,98 @@
+﻿@model Aoun.ViewModels.HomePageViewModel
+@{
+    ViewData["Title"] = "الصفحة الرئيسية";
+    Layout = "_Layout";
+}
+
+<section class="home">
+
+    <!-- Welcome Card -->
+    <div class="home__welcome">
+        <div class="home__welcomeText">
+            <h2 class="home__title">مرحبًا @Model.DriverName</h2>
+            <p class="home__sub">جاهزون لنساندك بكل دقّة وسهولة</p>
+        </div>
+
+        <div class="home__welcomeImg">
+            <img src="~/images/homePage1.png" alt="Welcome">
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="home__actions">
+        <a class="home__btn home__btn--primary" asp-controller="Accident" asp-action="Screening">
+            <span class="home__btnIcon">+</span>
+            <span>بدء حادث جديد</span>
+        </a>
+
+        <a class="home__btn home__btn--dark" asp-controller="Accident" asp-action="Join">
+            <i class="fa-solid fa-user-plus"></i>
+            <span>الانضمام لحادث</span>
+        </a>
+    </div>
+
+    <!-- Recent Header -->
+    <div class="home__recentHeader">
+        <div class="home__recentTitle">
+            <i class="fa-regular fa-clock"></i>
+            <h3>سجل الحوادث الأخيرة</h3>
+        </div>
+        <a class="home__viewAll" asp-controller="Accident" asp-action="History">عرض الكل</a>
+    </div>
+
+    <!-- Cards -->
+    <div class="home__list">
+        @if (Model.RecentAccidents.Count == 0)
+        {
+            <div class="home__empty">لا يوجد حوادث بعد.</div>
+        }
+        else
+        {
+            foreach (var item in Model.RecentAccidents)
+            {
+                var statusClass =
+                item.Status == "مقبول" ? "st-accepted" :
+                item.Status == "قيد المراجعة" ? "st-pending" :
+                item.Status == "مرفوض" ? "st-rejected" : "st-neutral";
+
+
+                <div class="hp-acc-card">
+
+                    <div class="acc-grid">
+
+                        <!-- Right side -->
+                        <div class="acc-main">
+                            <div class="acc-id">
+                                حادث # <span>@item.AccidentId</span>
+                            </div>
+
+                            <div class="acc-fault">
+                                <span class="label">نسبة الخطأ</span>
+                                <span class="value">
+                                    @((item.FaultPercent.HasValue) ? $"{item.FaultPercent}%" : "—")
+                                </span>
+                            </div>
+
+                            <div class="acc-footer">
+                                @if (item.AccidentDate.HasValue)
+                                {
+                                    <span>@item.AccidentDate.Value.ToString("yyyy-MM-dd")</span>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Left side -->
+                        <div class="acc-side">
+                            <div class="acc-status @statusClass">@item.Status</div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+            }
+        }
+    </div>
+
+</section>

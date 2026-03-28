@@ -1,0 +1,64 @@
+﻿@model Aoun.ViewModels.AccidentWaitingViewModel
+@{
+    ViewData["Title"] = "في انتظار السائق الآخر";
+    Layout = "_Layout";
+}
+
+<section class="wait">
+    <div class="wait__card">
+        <div class="wait__iconWrap">
+            <img class="wait__icon" src="~/images/users.png" alt="Users" />
+        </div>
+
+        <h3 class="wait__title">في انتظار السائق الآخر</h3>
+        <p class="wait__sub">سيتم إخطارك فور انضمامه</p>
+
+        <div class="wait__loading">
+            <span class="wait__spinner" aria-hidden="true"></span>
+            <span>جار الانتظار ...</span>
+        </div>
+
+        <div class="wait__codeBox">
+            <div class="wait__codeHint">تأكد من مشاركة رمز الحادث مع السائق الآخر</div>
+            <div class="wait__code">@Model.AccidentCode</div>
+        </div>
+    </div>
+
+    <a asp-controller="Home" asp-action="HomePage" class="wait__cancel">
+        إلغاء
+    </a>
+</section>
+
+@section Scripts {
+    <script>
+        (function () {
+            var accidentId = @Model.AccidentId;
+            var role = @Model.Role; // ✅
+
+            async function checkStatus() {
+                try {
+                    // ✅ مرري role هنا
+                    var res = await fetch(`/Accident/WaitingStatus?accidentId=${accidentId}&role=${role}`, {
+                        headers: { "Accept": "application/json" }
+                    });
+
+                    if (!res.ok) return;
+
+                    var data = await res.json();
+
+                    if (data.roomReady === true) {
+                        // ✅ استخدمي redirectUrl الجاهز (أفضل)
+                        window.location.href = data.redirectUrl;
+                        // أو لو تبين يدوي:
+                        // window.location.href = `/Accident/UploadPhotos?accidentId=${accidentId}&role=${role}`;
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            checkStatus();
+            setInterval(checkStatus, 2000);
+        })();
+    </script>
+}

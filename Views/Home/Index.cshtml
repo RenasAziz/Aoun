@@ -1,0 +1,72 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+    Layout = "_IndexLayout";
+}
+
+
+<section class="index-hero">
+    <!-- Top Bar -->
+    <div class="index-top">
+        <button class="index-menu-btn" id="menuToggle" aria-label="القائمة">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+
+        <img src="~/images/logoGreen.png" alt="عون" class="index-logo">
+
+        <!-- عنصر وهمي للموازنة -->
+        <div class="index-spacer"></div>
+    </div>
+
+
+    <!-- Hero Content -->
+    <div class="index-content">
+        <h1>لأن دقّة القرار تصنع الفارق</h1>
+        <p>
+            يقدّم لك عون تقارير دقيقة تساعد الجهات
+            المختصة في اتخاذ القرارات الصحيحة
+        </p>
+
+        <img src="~/images/index.png" alt="تطبيق عون" class="index-phone">
+    </div>
+</section>
+
+<!-- How it works -->
+<section class="how-it-works">
+    <h2>كيف يعمل عون؟</h2>
+
+    <div class="steps">
+        <div class="step">
+            <div class="step-icon">
+                <i class="fa-solid fa-camera"></i>
+            </div>
+            <span>التقط صور الحادث</span>
+        </div>
+
+        <div class="step">
+            <div class="step-icon">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <span>أجب على أسئلة بسيطة</span>
+        </div>
+
+        <div class="step">
+            <div class="step-icon">
+                <i class="fa-solid fa-file-lines"></i>
+            </div>
+            <span>استلم التقرير فورًا</span>
+        </div>
+    </div>
+
+    <a asp-controller="Auth"
+       asp-action="Login"
+       class="start-btn">ابدأ الآن</a>
+
+    <div class="new-user">
+        مستخدم جديد؟
+        <a asp-controller="Auth"
+           asp-action="Register">
+            أنشئ حسابًا
+        </a>
+    </div>
+
+</section>

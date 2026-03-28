@@ -1,0 +1,59 @@
+﻿@model Aoun.ViewModels.Auth.LoginViewModel
+<!--View receives LoginViewModel (Email + Password)-->
+
+@{
+    ViewData["Title"] = "تسجيل الدخول";
+    Layout = "_AuthLayout";
+}
+
+<div class="auth-page">
+    <div class="auth-card">
+
+        <!-- Back arrow -->
+        <a href="javascript:history.back()" class="auth-back">
+            <!-- Returns to previous page -->
+            <img src="/images/back-arrow.png" alt="Back" />
+        </a>
+
+        <img src="/images/logo.png" class="auth-logo" />
+
+        <div class="auth-title">تسجيل الدخول</div>
+        <div class="auth-sub">أدخل بياناتك للمتابعة</div>
+
+        @if (ViewBag.Error != null)
+        {
+            <!-- Displays login error (wrong email/password) -->
+            <div class="auth-error">@ViewBag.Error</div>
+        }
+
+        <form asp-action="Login" method="post">
+            <!-- Submits credentials to Login action -->
+
+            <div class="auth-group">
+                <label>البريد الإلكتروني</label>
+                <input asp-for="Email" class="auth-input" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <div class="auth-group">
+                <label>كلمة المرور</label>
+                <input asp-for="Password" type="password" class="auth-input" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+
+            <!-- Forgot password link -->
+            <div class="forgot-password">
+                <a asp-action="ForgotPassword">نسيت كلمة المرور؟</a>
+            </div>
+
+            <button class="auth-btn">تسجيل الدخول</button>
+        </form>
+
+        <!-- Register link -->
+        <div class="auth-link">
+            مستخدم جديد؟
+            <a asp-action="Register">إنشاء حساب</a>
+        </div>
+    </div>
+</div>
+

@@ -1,0 +1,70 @@
+﻿@model Aoun.ViewModels.Accident.AccidentListViewModel
+
+@{
+    ViewData["Title"] = "سجل الحوادث";
+}
+
+<div class="accidents-page">
+
+    <!-- Header Card -->
+    <div class="vehicles-header">
+        <h4 class="vehicles-section-title">سجل الحوادث</h4>
+    </div>
+
+    <!-- SEARCH BAR -->
+    <form method="get" asp-action="Index" asp-controller="AccidentHistory" class="search-container">
+        <!-- Form sends a GET request to Index action -->
+        <!-- Used for filtering/searching vehicles -->
+
+        <input type="text"
+               name="searchString"
+               value="@ViewData["CurrentFilter"]"
+               placeholder="بحث"
+               class="search-input" />
+
+        <button type="submit" class="search-icon-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+        </button>
+
+    </form>
+
+    <div class="accident-grid">
+
+    @foreach (var accident in Model.Accidents)
+    {
+        <div class="hp-acc-card">
+            <div class="acc-grid">
+
+                <div class="acc-main">
+                    <div class="acc-id">
+                        @accident.AccidentNumber
+                    </div>
+
+                    <div class="acc-fault">
+                        <span class="label">نسبة الخطأ</span>
+                        <span class="value">@accident.FaultPercentage %</span>
+                    </div>
+
+                    <div class="acc-footer">
+                        @accident.AccidentDate
+                    </div>
+
+                    <a asp-action="Details"
+                       asp-route-id="@accident.AccidentId"
+                       class="home__viewAll">
+                        عرض التفاصيل
+                    </a>
+                </div>
+
+                <div class="acc-side">
+                    <span class="acc-status @accident.StatusCssClass">
+                        @accident.Status
+                    </span>
+                </div>
+
+            </div>
+        </div>
+    }
+
+    </div>
+</div>

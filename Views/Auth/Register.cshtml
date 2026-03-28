@@ -1,0 +1,75 @@
+﻿@model Aoun.ViewModels.Auth.RegisterViewModel
+<!--Contains DriverName, LicenseNumber, PhoneNumber, Email, Password, ConfirmPassword-->
+
+@{
+    ViewData["Title"] = "إنشاء حساب";
+    Layout = "_AuthLayout";
+}
+
+<div class="auth-page">
+    <div class="auth-card">
+
+        <!-- Back arrow -->
+        <a href="javascript:history.back()" class="auth-back">
+            <img src="/images/back-arrow.png" alt="Back" />
+        </a>
+
+        <img src="/images/logo.png" class="auth-logo" />
+
+        <div class="auth-title">إنشاء حساب جديد</div>
+        <div class="auth-sub">املأ بياناتك للمتابعة</div>
+
+        @if (ViewBag.Error != null)
+        {
+            <!-- Displays server-side registration error -->
+            <div class="auth-error">@ViewBag.Error</div>
+        }
+
+        <form asp-action="Register" method="post">
+
+            <!-- Displays all validation errors -->
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div asp-validation-summary="All" class="auth-error"></div>
+            }
+
+            <div class="auth-group">
+                <label>الاسم الكامل</label>
+                <input asp-for="DriverName" class="auth-input" />
+            </div>
+
+            <div class="auth-group">
+                <label>رقم رخصة القيادة</label>
+                <input asp-for="LicenseNumber" class="auth-input" />
+            </div>
+
+            <div class="auth-group">
+                <label>رقم الجوال</label>
+                <input asp-for="PhoneNumber" class="auth-input" />
+            </div>
+
+            <div class="auth-group">
+                <label>البريد الإلكتروني</label>
+                <input asp-for="Email" class="auth-input" />
+            </div>
+
+            <div class="auth-group">
+                <label>كلمة المرور</label>
+                <input asp-for="Password" type="password" class="auth-input" />
+            </div>
+
+            <div class="auth-group">
+                <label>تأكيد كلمة المرور</label>
+                <input asp-for="ConfirmPassword" type="password" class="auth-input" />
+            </div>
+
+            <button class="auth-btn">إنشاء الحساب</button>
+        </form>
+
+        <div class="auth-link">
+            لديك حساب؟
+            <a asp-action="Login">تسجيل الدخول</a>
+        </div>
+    </div>
+</div>
+

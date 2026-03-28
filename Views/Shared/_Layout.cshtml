@@ -1,0 +1,140 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Aoun</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Aoun.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+</head>
+<body>
+
+    <main role="main" class="pb-3">
+        <header class="app-bar">
+            <!-- LEFT ICONS -->
+            <div class="app-bar-icons">
+                <button class="icon-btn" id="menuToggle" aria-label="القائمة">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+
+
+                <button class="icon-btn bell" aria-label="الإشعارات">
+                    <i class="fa-solid fa-bell"></i>
+                </button>
+            </div>
+
+            <!-- LOGO (RIGHT) -->
+            <div class="app-bar-logo">
+                <img src="~/images/logo.png" alt="عون" class="app-logo">
+            </div>
+        </header>
+        <!-- Side Menu (Frontend Only) -->
+        <aside class="side-menu">
+
+            <div class="menu-header">
+                <button class="close-menu" id="closeMenu" aria-label="إغلاق">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <div class="menu-profile">
+                    <div class="profile-avatar">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div class="profile-info">
+                        <span class="profile-name">
+                            @{
+                                var name = Context.Session.GetString("UserName");
+                            }
+                            @(name ?? "زائر")
+                        </span>
+                        <a asp-controller="Pages" asp-action="Profile" class="profile-link">
+                            عرض الملف الشخصي
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- Profile Section -->
+
+
+            <nav class="menu-nav">
+
+                <div class="menu-section">
+                    <a asp-controller="Home" asp-action="HomePage" class="menu-item">
+                        <i class="fa-solid fa-house"></i>
+                        <span>الصفحة الرئيسية</span>
+                    </a>
+
+                    <a href="#" class="menu-item">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>الإبلاغ عن حادث جديد</span>
+                    </a>
+
+                    <a href="#" class="menu-item">
+                        <i class="fa-solid fa-handshake"></i>
+                        <span>الانضمام لحادث</span>
+                    </a>
+                </div>
+
+                <div class="menu-section">
+                    <a asp-controller="Vehicles" asp-action="Index" class="menu-item">
+                        <i class="fa-solid fa-car"></i>
+                        <span>مركباتي</span>
+                    </a>
+
+                    <a asp-controller="AccidentHistory" asp-action="Index" class="menu-item">
+                        <i class="fa-solid fa-clipboard-list"></i>
+                        <span>سجل الحوادث</span>
+                    </a>
+                </div>
+
+                <div class="menu-section">
+                    <a asp-controller="Pages" asp-action="Settings" class="menu-item">
+                        <i class="fa-solid fa-gear"></i>
+                        <span>الإعدادات</span>
+                    </a>
+
+                    <a asp-controller="Pages" asp-action="Help" class="menu-item">
+                        <i class="fa-solid fa-circle-question"></i>
+                        <span>مركز المساعدة</span>
+                    </a>
+
+                    <a asp-controller="Pages" asp-action="Contact" class="menu-item">
+                        <i class="fa-solid fa-envelope"></i>
+                        <span>تواصل معنا</span>
+                    </a>
+
+                    <a asp-controller="Pages" asp-action="About" class="menu-item">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <span>عن عون</span>
+                    </a>
+                </div>
+
+                <div class="menu-section logout">
+                    <a asp-controller="Auth" asp-action="Logout" class="menu-item logout-item">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        <span>تسجيل الخروج</span>
+                    </a>
+                </div>
+
+            </nav>
+        </aside>
+
+        <div class="menu-overlay"></div>
+
+        @RenderBody()
+    </main>
+
+
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

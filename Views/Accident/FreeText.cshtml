@@ -1,0 +1,57 @@
+﻿@model Aoun.ViewModels.DynamicQuestionsViewModel
+
+@{
+    ViewData["Title"] = "FreeText";
+}
+
+<div class="free-text-page" dir="rtl">
+    <div class="top-strip"></div>
+
+    <div class="page-shell">
+        <div class="icon-wrap">
+            <div class="icon-circle">
+                <svg width="44" height="44" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M9 3H15L16 5H20C20.5523 5 21 5.44772 21 6V20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V6C3 5.44772 3.44772 5 4 5H8L9 3Z"
+                          stroke="black" stroke-width="1.8" stroke-linejoin="round" />
+                    <path d="M8 9H16" stroke="black" stroke-width="1.8" stroke-linecap="round" />
+                    <path d="M8 13H16" stroke="black" stroke-width="1.8" stroke-linecap="round" />
+                    <path d="M8 17H13" stroke="black" stroke-width="1.8" stroke-linecap="round" />
+                </svg>
+            </div>
+        </div>
+
+        <div class="step-text">3 من 3</div>
+
+        <h1 class="page-title">الأسئلة الديناميكية</h1>
+        <p class="page-subtitle">أجب عن الأسئلة التالية لمساعدتنا على فهم الحادث</p>
+
+        <form asp-action="FreeText" method="post" class="free-text-form">
+            @Html.AntiForgeryToken()
+
+            <input type="hidden" asp-for="AccidentId" />
+            <input type="hidden" asp-for="Role" />
+            <input type="hidden" asp-for="QuestionId" />
+
+            <div asp-validation-summary="ModelOnly" class="validation-box"></div>
+
+            <div class="question-card">
+                <div class="question-title">صف الحادث بكلماتك</div>
+
+                <textarea asp-for="FreeText"
+                          class="free-textarea"
+                          rows="7"
+                          placeholder="اكتب وصفًا تفصيليًا للحادث ..."></textarea>
+            </div>
+
+            <button type="submit" class="next-btn">متابعة</button>
+
+            <div class="optional-note">هذا الحقل اختياري، يمكنك تركه فارغًا ثم الضغط على متابعة</div>
+        </form>
+    </div>
+</div>
+
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

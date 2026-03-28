@@ -1,0 +1,126 @@
+﻿@model Aoun.ViewModels.SelectVehicleViewModel
+@{
+    ViewData["Title"] = "اختر المركبة المتضررة";
+    Layout = "_Layout";
+}
+
+<section class="sv">
+    <div class="sv__top">
+        <div class="sv__icon">
+            <i class="fa-solid fa-car"></i>
+        </div>
+        <div class="sv__step">2 من 3</div>
+        <h2 class="sv__title">اختر المركبة المتضررة</h2>
+        <p class="sv__sub">اختر من مركباتك المسجلة أو أضف مركبة جديدة</p>
+    </div>
+
+    <div class="sv__card">
+        <h3 class="sv__cardTitle">مركباتك المسجلة</h3>
+
+        <form asp-controller="Accident" asp-action="SelectVehicle" method="post" id="svForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="AccidentId" />
+            <input type="hidden" asp-for="Role" />
+
+            <div class="sv__list">
+                @if (Model.Vehicles == null || Model.Vehicles.Count == 0)
+                {
+                    <div class="sv__empty">لا توجد مركبات مسجلة.</div>
+                }
+                else
+                {
+                    foreach (var v in Model.Vehicles)
+                    {
+                        var checkedAttr = (Model.SelectedVehicleId == v.VehicleId) ? "checked" : "";
+                        <label class="sv__item">
+                            <input type="radio" name="SelectedVehicleId" value="@v.VehicleId" @checkedAttr />
+                            <div class="sv__info">
+                                <div class="sv__name">@v.Title</div>
+                                <div class="sv__meta">@v.Sub</div>
+                            </div>
+                            <div class="sv__mark" aria-hidden="true"></div>
+                        </label>
+                    }
+                }
+            </div>
+
+            <!-- Add new vehicle -->
+            <button type="button" class="sv__add" data-bs-toggle="modal" data-bs-target="#addVehicleModal">
+                <span class="sv__plus">+</span>
+                <div>
+                    <div class="sv__addTitle">إضافة مركبة جديدة</div>
+                    <div class="sv__addSub">في حال لم تكن المركبة المتضررة ضمن قائمة مركباتك</div>
+                </div>
+            </button>
+
+            <div class="text-danger mt-2 d-none" id="svServerErrors">
+                @Html.ValidationSummary()
+            </div>
+
+            <button type="submit" class="sv__btn">
+                متابعة
+            </button>
+
+            <a class="sv__back" asp-controller="Accident" asp-action="UploadPhotos"
+               asp-route-accidentId="@Model.AccidentId" asp-route-role="@Model.Role">
+                رجوع للخطوة السابقة
+            </a>
+        </form>
+    </div>
+</section>
+
+<!-- Add Vehicle Modal -->
+<div class="modal fade" id="addVehicleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content sv-modal">
+            <div class="modal-header sv-modal__header">
+                <button type="button" class="btn-close sv-modal__close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+                <h5 class="modal-title sv-modal__title">إضافة مركبة جديدة</h5>
+            </div>
+
+            <form asp-controller="Accident" asp-action="AddVehicle" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="AccidentId" />
+                <input type="hidden" asp-for="Role" />
+
+                <div class="modal-body sv-modal__body">
+                    <div class="sv-modal__field">
+                        <label class="sv-modal__label">رقم اللوحة</label>
+                        <input class="sv-modal__input" name="NewLicensePlate" placeholder="أ ب ج 1234" required />
+                    </div>
+
+                    <div class="sv-modal__grid">
+                        <div class="sv-modal__field">
+                            <label class="sv-modal__label">الموديل</label>
+                            <input class="sv-modal__input" name="NewModel" placeholder="سوبورتاج" />
+                        </div>
+
+                        <div class="sv-modal__field">
+                            <label class="sv-modal__label">السنة</label>
+                            <input class="sv-modal__input" name="NewYear" type="number" min="1980" max="2100" placeholder="2025" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer sv-modal__footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-success">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            // تحسين اختيار العنصر (شكل check يمين)
+            document.querySelectorAll(".sv__item").forEach(function (item) {
+                item.addEventListener("click", function () {
+                    document.querySelectorAll(".sv__item").forEach(x => x.classList.remove("is-checked"));
+                    item.classList.add("is-checked");
+                });
+            });
+        })();
+    </script>
+}

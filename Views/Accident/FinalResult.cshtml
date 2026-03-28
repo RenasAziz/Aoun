@@ -1,0 +1,93 @@
+﻿@model Aoun.ViewModels.FinalResultViewModel
+
+@{
+    ViewData["Title"] = "النتيجة النهائية";
+}
+
+<div class="container py-4" dir="rtl">
+
+    @if (Model.HasConflicts)
+    {
+        <div class="alert alert-warning rounded-4 shadow-sm mb-4">
+            <strong>تم رصد تناقض بين إجابات الطرفين</strong><br />
+            قد يؤثر هذا التناقض على دقة التقييم الأولي، وسيتواصل معكم محقق الحوادث للتأكد من صحة المعلومات.
+        </div>
+    }
+
+    <div class="alert alert-warning rounded-4 shadow-sm mb-4">
+        <strong>تم رصد تناقض بين إجابات الطرفين</strong><br />
+        قد يؤثر هذا التناقض على دقة التقييم الأولي، وسيتواصل معكم محقق الحوادث للتأكد من صحة المعلومات.
+    </div>
+
+    <div class="card shadow-sm rounded-4 border-0 mb-4">
+        <div class="card-body">
+            <h4 class="text-success fw-bold">@Model.AccidentCode</h4>
+            <hr />
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div><strong>التاريخ</strong></div>
+                    <div>@Model.FormattedDate</div>
+                </div>
+                <div class="col-md-4">
+                    <div><strong>الوقت</strong></div>
+                    <div>@Model.FormattedTime</div>
+                </div>
+                <div class="col-md-4">
+                    <div><strong>الموقع</strong></div>
+                    <div>@Model.Location</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm rounded-4 border-0 mb-4">
+        <div class="card-body">
+            <h5 class="fw-bold text-success mb-3">نوع الحادث والنتيجة</h5>
+
+            <div class="bg-light rounded-4 p-3 mb-3">
+                <div class="text-muted small">نوع الحادث المحدد</div>
+                <div class="fw-bold fs-5 text-success">@Model.AccidentClassification</div>
+                <div class="mt-2">
+                    <span class="badge bg-success-subtle text-success border">
+                        مستوى الثقة: @Model.ConfidencePercentText
+                    </span>
+                </div>
+            </div>
+
+            <h6 class="fw-bold mb-3">نسبة الخطأ المقترحة:</h6>
+
+            <div class="bg-light rounded-4 p-3 mb-2 d-flex justify-content-between">
+                <div>
+                    <div class="text-muted small">@Model.OtherDriverLabel</div>
+                </div>
+                <div class="fw-bold text-success">@Model.OtherDriverFaultPercent%</div>
+            </div>
+
+            <div class="bg-light rounded-4 p-3 mb-3 d-flex justify-content-between">
+                <div>
+                    <div class="text-muted small">@Model.CurrentDriverLabel</div>
+                </div>
+                <div class="fw-bold text-danger">@Model.CurrentDriverFaultPercent%</div>
+            </div>
+
+            <div class="bg-light rounded-4 p-3">
+                <div class="fw-bold text-success mb-2">مبررات القرار</div>
+                <div style="white-space: pre-line;">@Model.DecisionExplanation</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-grid gap-3">
+        <a class="btn btn-success btn-lg rounded-4" href="#">
+            تحميل التقرير PDF
+        </a>
+
+        <a asp-action="Feedback"
+           asp-controller="Accident"
+           asp-route-accidentId="@Model.AccidentId"
+           asp-route-role="@Model.Role"
+           class="your-button-class">
+            التقييم
+        </a>
+    </div>
+</div>

@@ -1,0 +1,54 @@
+﻿@{
+    ViewData["Title"] = "الانضمام لحادث";
+    Layout = "_Layout";
+}
+
+<section class="join">
+    <div class="join__hero">
+        <img class="join__heroIcon" src="~/images/join.png" alt="Join" />
+        <h3 class="join__title">الانضمام لحادث</h3>
+    </div>
+
+    <div class="join__card">
+        <div class="join__label">باستخدام رمز الحادث</div>
+
+        <form asp-controller="Accident" asp-action="JoinByCode" method="post" class="join__form">
+            @Html.AntiForgeryToken()
+
+            <input type="text"
+                   name="code"
+                   class="join__input"
+                   placeholder="ACC-2024-00856"
+                   autocomplete="off"
+                   required />
+
+            <button type="submit" class="join__btnPrimary">انضمام</button>
+        </form>
+
+        <div class="join__divider">
+            <span>أو</span>
+        </div>
+
+        <div class="join__label">عن طريق مسح QR</div>
+
+        <div class="join__qrBox">
+            <img class="join__qrIcon" src="~/images/barcode.png" alt="QR" />
+        </div>
+
+        <button type="button" class="join__btnPrimary" onclick="openScanner()">
+            فتح الكاميرا لمسح QR
+        </button>
+
+        <a asp-controller="Home" asp-action="HomePage" class="join__back">
+            الرجوع للصفحة الرئيسية
+        </a>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        function openScanner() {
+            alert("قريبًا: ماسح QR");
+        }
+    </script>
+}

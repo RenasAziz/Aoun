@@ -1,0 +1,106 @@
+﻿@model Aoun.ViewModels.AccidentWaitingViewModel
+@{
+    Layout = "_Layout";
+
+    var routingCode = ViewData["RoutingCode"] as string;
+    var waitMode = ViewData["WaitMode"] as string;
+    var packName = ViewData["PackName"] as string;
+
+    var isRoutingBarrier = !string.IsNullOrEmpty(routingCode);
+    var isConflictBackWait = waitMode == "ConflictBack";
+
+    ViewData["Title"] = isRoutingBarrier || isConflictBackWait
+        ? "بانتظار الطرف الآخر"
+        : "تم إرسال الإجابات";
+}
+
+<section class="wait">
+    <div class="wait__card">
+
+        @if (isRoutingBarrier)
+        {
+            <h2 class="wait__title">بانتظار الطرف الآخر</h2>
+            <p class="wait__sub">
+                يرجى الانتظار حتى يقوم الطرف الآخر بالإجابة على سؤال تحديد موقع الحادث
+                قبل المتابعة إلى الأسئلة التالية.
+            </p>
+        }
+        else if (isConflictBackWait)
+        {
+            <h2 class="wait__title">بانتظار الطرف الآخر</h2>
+            <p class="wait__sub">
+                بانتظار الطرف الآخر لإكمال أسئلة التحقق الإضافية.
+            </p>
+        }
+        else
+        {
+            <h2 class="wait__title">تم إرسال إجاباتك</h2>
+            <p class="wait__sub">
+                بانتظار الطرف الآخر لإكمال أسئلة التحقق.
+            </p>
+        }
+
+        <div class="wait__loading">
+            <span class="wait__spinner"></span>
+            <span>جاري التحقق...</span>
+        </div>
+
+        <div class="wait__codeBox">
+            <div class="wait__codeHint">رمز الحادث</div>
+            <div class="wait__code">@Model.AccidentCode</div>
+        </div>
+
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        (function () {
+
+            var accidentId = @Model.AccidentId;
+            var role = @Model.Role;
+
+            var routingCode = "@(routingCode ?? "")";
+            var currentQuestionId = "@(ViewData["CurrentQuestionId"] ?? "")";
+            var waitMode = "@(waitMode ?? "")";
+            var packName = "@(packName ?? "")";
+
+            function poll() {
+
+                var url;
+
+                if (routingCode) {
+                    url = `/Accident/WaitOnRoutingStatus?accidentId=${accidentId}&role=${role}&currentQuestionId=${currentQuestionId}&routingCode=${routingCode}`;
+                } else if (waitMode === "ConflictBack") {
+                    url = `/Accident/ConflictBackDoneStatus?accidentId=${accidentId}&role=${role}&packName=${encodeURIComponent(packName)}`;
+                } else {
+                    url = `/Accident/MirrorDoneStatus?accidentId=${accidentId}&role=${role}`;
+                }
+
+                fetch(url)
+                    .then(r => r.json())
+                    .then(d => {
+
+                        if (routingCode || waitMode === "ConflictBack") {
+                            if (d.ready) {
+                                window.location.href = d.redirectUrl;
+                            } else {
+                                setTimeout(poll, 1500);
+                            }
+                        } else {
+                            if (d.bothDone) {
+                                window.location.href = d.redirectUrl;
+                            } else {
+                                setTimeout(poll, 1500);
+                            }
+                        }
+
+                    })
+                    .catch(() => setTimeout(poll, 2000));
+            }
+
+            poll();
+
+        })();
+    </script>
+}

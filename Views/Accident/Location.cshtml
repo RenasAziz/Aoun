@@ -1,0 +1,199 @@
+﻿@model Aoun.ViewModels.AccidentLocationViewModel
+@{
+    ViewData["Title"] = "تحديد موقع الحادث";
+    Layout = "_Layout";
+}
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<section class="container py-4" style="max-width: 650px;">
+    <div class="text-center mb-3">
+        <h3 class="fw-bold">تحديد الموقع</h3>
+        <p class="text-muted mb-0">يرجى الانتظار قليلًا، نقوم حاليًا بتحديد موقعك</p>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div id="map" style="height: 320px; border-radius: 12px;"></div>
+
+            <div class="mt-3">
+                <div class="fw-bold" id="cityLine">—</div>
+                <div class="text-muted small" id="addressLine">—</div>
+            </div>
+
+            <hr />
+
+            <div class="d-flex justify-content-between">
+                <div>
+                    <div class="text-muted small">التاريخ</div>
+                    <div class="fw-bold" id="dateDisplay">—</div>
+                </div>
+                <div>
+                    <div class="text-muted small">الوقت</div>
+                    <div class="fw-bold" id="timeDisplay">—</div>
+                </div>
+            </div>
+
+            <form asp-action="Location" asp-controller="Accident" method="post" class="mt-4" id="locForm">
+                @Html.AntiForgeryToken()
+
+                <input type="hidden" asp-for="LocationText" id="LocationText" />
+                <input type="hidden" asp-for="Latitude" id="Latitude" />
+                <input type="hidden" asp-for="Longitude" id="Longitude" />
+                <input type="hidden" asp-for="AccidentDateIso" id="AccidentDateIso" />
+                <input type="hidden" asp-for="AccidentTimeIso" id="AccidentTimeIso" />
+
+                <div class="hp-location-actions">
+                    <button type="submit" class="hp-btn-confirm" id="confirmBtn" disabled>
+                        تأكيد
+                    </button>
+
+
+                    <a asp-controller="Home"
+                       asp-action="HomePage"
+                       class="hp-btn-cancel">
+                        إلغاء
+                    </a>
+                </div>
+
+
+
+            </form>
+        </div>
+    </div>
+</section>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    (function () {
+
+        const confirmBtn = document.getElementById("confirmBtn");
+
+        // ===== 1) التاريخ/الوقت من الجهاز =====
+        // تخزين ISO للـ POST
+        const now = new Date();
+
+        // ISO date: yyyy-MM-dd
+        const isoDate = now.toISOString().slice(0, 10);
+
+        // ISO time: HH:mm:ss (من وقت الجهاز المحلي)
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        const ss = "00";
+        const isoTime = `${hh}:${mm}:${ss}`;
+
+        document.getElementById("AccidentDateIso").value = isoDate;
+        document.getElementById("AccidentTimeIso").value = isoTime;
+
+        // عرض: يوم/شهر/سنة ميلادي
+        const dateFormatter = new Intl.DateTimeFormat('ar-SA-u-ca-gregory', {
+            day: '2-digit', month: '2-digit', year: 'numeric'
+        });
+
+        // عرض: 11:10 م / 12:00 ص
+        const timeFormatter = new Intl.DateTimeFormat('ar-SA-u-ca-gregory', {
+            hour: 'numeric', minute: '2-digit', hour12: true
+        });
+
+        document.getElementById("dateDisplay").textContent = dateFormatter.format(now);
+        document.getElementById("timeDisplay").textContent = timeFormatter.format(now);
+
+        // ===== 2) الخريطة + تحديد الموقع =====
+        const map = L.map('map').setView([21.4858, 39.1925], 12); // جدة افتراضياً
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }).addTo(map);
+
+        let marker = L.marker([21.4858, 39.1925], { draggable: true }).addTo(map);
+
+        function setLatLng(lat, lng) {
+            document.getElementById("Latitude").value = lat;
+            document.getElementById("Longitude").value = lng;
+        }
+
+        let geocodeTimer = null;
+
+        async function reverseGeocode(lat, lng) {
+            // Arabic: انتظر شوي قبل إرسال الطلب (Debounce)
+            // English: Debounce to reduce requests
+            if (geocodeTimer) clearTimeout(geocodeTimer);
+
+            geocodeTimer = setTimeout(async () => {
+                try {
+                    document.getElementById("cityLine").textContent = "—";
+                    document.getElementById("addressLine").textContent = "جارٍ جلب العنوان...";
+
+                    const url =
+                        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}` +
+                        `&zoom=18&addressdetails=1&accept-language=ar&email=yourapp@example.com`;
+
+                    const res = await fetch(url, {
+                        headers: {
+                            "Accept": "application/json"
+                        }
+                    });
+
+                    if (!res.ok) {
+                        // Arabic: اطبع السبب الحقيقي في الكونسل
+                        // English: Print real error in console
+                        console.error("Reverse geocode failed:", res.status, res.statusText);
+                        throw new Error(`HTTP ${res.status}`);
+                    }
+
+                    const data = await res.json();
+
+                    const display = data.display_name || "";
+                    const addr = data.address || {};
+                    const city = addr.city || addr.town || addr.village || addr.state || "—";
+
+                    document.getElementById("cityLine").textContent = city;
+                    document.getElementById("addressLine").textContent = display || "—";
+
+                    document.getElementById("LocationText").value = display || `${lat}, ${lng}`;
+                    confirmBtn.disabled = !document.getElementById("LocationText").value;
+
+                } catch (e) {
+                    console.error("Reverse geocode error:", e);
+
+                    // Arabic: fallback = احفظ الإحداثيات فقط
+                    // English: fallback store only coordinates
+                    document.getElementById("LocationText").value = `${lat}, ${lng}`;
+                    document.getElementById("cityLine").textContent = "—";
+                    document.getElementById("addressLine").textContent =
+                        "تعذر جلب العنوان حالياً، تم حفظ الإحداثيات.";
+                    confirmBtn.disabled = false;
+                }
+            }, 600); // 600ms
+        }
+
+
+        // عند تحريك الماركر
+        marker.on('dragend', function () {
+            const p = marker.getLatLng();
+            setLatLng(p.lat, p.lng);
+            reverseGeocode(p.lat, p.lng);
+        });
+
+        // GPS من الجهاز
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(async pos => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                map.setView([lat, lng], 16);
+                marker.setLatLng([lat, lng]);
+                setLatLng(lat, lng);
+                await reverseGeocode(lat, lng);
+            }, async () => {
+                // لو رفض الإذن
+                const p = marker.getLatLng();
+                setLatLng(p.lat, p.lng);
+                await reverseGeocode(p.lat, p.lng);
+            }, { enableHighAccuracy: true, timeout: 8000 });
+        } else {
+            const p = marker.getLatLng();
+            setLatLng(p.lat, p.lng);
+            reverseGeocode(p.lat, p.lng);
+        }
+
+    })();
+</script>
