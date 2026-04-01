@@ -1,0 +1,90 @@
+﻿@{
+    ViewData["Title"] = "مركز المساعدة";
+    Layout = "_Layout";
+}
+
+<div class="static-page">
+    <!-- Main help page container -->
+
+    <div class="card">
+        <h3>مركز المساعدة</h3>
+        <p>
+            مرحبًا بك في مركز المساعدة! هنا ستجد الإجابات على أكثر الأسئلة شيوعًا.
+        </p>
+
+        <div class="headerImg">
+            <img src="~/images/help.png" alt="help">
+        </div>
+
+    </div>
+
+    <!---------------------------------------------------------------------------------------->
+
+    <!-- FAQ ITEM 1 -->
+    <div class="faq-item">
+        <button class="faq-question">كيف يعمل عون؟</button>
+        <!-- Clickable question button -->
+
+        <div class="faq-answer">
+            <!-- Hidden answer shown when clicked -->
+            يقوم عون بتحليل صور الحادث باستخدام الذكاء الاصطناعي لتقدير المسؤولية وإصدار تقرير.
+        </div>
+    </div>
+
+    <!-- FAQ ITEM 2 -->
+    <div class="faq-item">
+        <button class="faq-question">ماذا أفعل إذا لم تظهر النتيجة؟</button>
+        <div class="faq-answer">
+            <ul>
+                <li>تأكد من استقرار اتصال الإنترنت.</li>
+                <li>تحقق من وضوح الصور المرفوعة.</li>
+                <li>تأكد من إدخال جميع البيانات المطلوبة.</li>
+                <li>حاول إعادة الإرسال مرة أخرى.</li>
+                <li>تواصل مع فريق الدعم إذا استمرت المشكلة.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- FAQ ITEM 3 -->
+    <div class="faq-item">
+        <button class="faq-question">كيف أُحَسِّن دقة التحليل؟</button>
+        <div class="faq-answer">
+            <ul>
+                <li>صوّر المركبة من زوايا مختلفة.</li>
+                <li>ركّز على المناطق المتضرّرة.</li>
+                <li>تجنّب الإضاءة الضعيفة أو الانعكاسات على السّيّارة.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- FAQ ITEM 4 -->
+    <div class="faq-item">
+        <button class="faq-question">هل بياناتي آمنة؟</button>
+        <div class="faq-answer">
+           نعم، يلتزم عون بحماية خصوصيّتك ويتم التعامل مع الصوّر والمعلومات وفق معايير أمان عالية.
+        </div>
+    </div>
+
+</div>
+
+<!---------------------------------------------------------------------------------------->
+
+@section Scripts {
+    <script>
+        // Select all FAQ question buttons
+        document.querySelectorAll(".faq-question").forEach(btn => {
+
+            // Add click event listener to each button
+            btn.addEventListener("click", function () {
+
+                this.classList.toggle("active");  
+                // Toggles arrow rotation or styling effect
+
+                this.nextElementSibling.classList.toggle("show");
+                // Shows or hides the corresponding answer div
+
+            });
+        });
+    </script>
+}
+

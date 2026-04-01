@@ -809,6 +809,9 @@ i[class^="fa"], i[class*=" fa"],
     padding: 20px;
     margin-bottom: 15px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center; /* vertically align */
+    justify-content: space-between;
 }
 
 ;
@@ -914,6 +917,9 @@ i[class^="fa"], i[class*=" fa"],
     margin-top: 10px;
     margin-bottom: 15px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center; /* vertically align */
+    justify-content: space-between;
 }
 
 .header-icon {
@@ -2868,6 +2874,9 @@ i[class^="fa"], i[class*=" fa"],
     padding: 20px;
     margin-bottom: 15px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center; /* vertically align */
+    justify-content: space-between;
 }
 
 .vehicles-btn-primary {
@@ -3027,4 +3036,9 @@ i[class^="fa"], i[class*=" fa"],
 
 .vehicle-info {
     font-size: 0.9rem;
+}
+
+.headerImg img {
+    width: 110px;
+    height: auto;
 }

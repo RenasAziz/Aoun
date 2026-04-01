@@ -1,0 +1,51 @@
+﻿@model Aoun.Models.Vehicle
+
+<div class="delete-overlay">
+    <!-- Dark overlay background -->
+
+    <div class="delete-card">
+        <!-- Confirmation card -->
+        
+        <img src="~/images/alert.png" class="alert-icon" />
+
+        <h4 class="delete-title">تأكيد الحذف</h4>
+
+        <p class="delete-text">
+            هل أنت متأكد من أنك ترغب في حذف هذه المركبة؟
+        </p>
+        <!-- Confirmation message -->
+
+        <div class="delete-vehicle-box">
+            <!-- Displays vehicle details before deletion -->
+
+            <h6>
+                سيارة - @Model.LicensePlate
+                <img src="/images/car.png" alt="car" />
+            </h6>
+            <p>الطراز: @Model.Model</p>
+            <p>سنة التصنيع: @Model.Year</p>
+        </div>
+
+        <form asp-action="Delete" method="post">
+            <!-- Sends POST request to confirm deletion -->
+
+            <input type="hidden" asp-for="VehicleId" />
+            <!-- Sends VehicleId to controller -->
+
+            <div class="delete-buttons">
+                <a asp-action="Index" class="btn-cancel">
+                    <!-- Cancel button redirects to Index without deleting -->
+                    إلغاء
+                </a>
+
+                <button type="submit" class="btn-delete">
+                    <!-- Confirms deletion -->
+                    نعم حذف
+                </button>
+            </div>
+        </form>
+
+    </div>
+
+</div>
+

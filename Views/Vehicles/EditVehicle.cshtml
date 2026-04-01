@@ -1,0 +1,53 @@
+﻿@model Aoun.Models.Vehicle
+<!-- View receives a single Vehicle object to edit -->
+
+<form asp-action="Edit" method="post" class="vehicles-page">
+    <!-- Form sends POST request to Edit action to update data -->
+
+    <input type="hidden" asp-for="VehicleId" />
+    <!-- Hidden field to send VehicleId back to controller -->
+
+    <input type="hidden" asp-for="DriverUserId" />
+    <!-- Hidden field to preserve DriverUserId relationship -->
+
+    <div class="vehicle-form-card">
+
+        <!-- Back arrow -->
+        <a href="javascript:history.back()" class="auth-back">
+            <!-- Returns to previous page without controller call -->
+            <img src="/images/back-arrow.png" alt="Back" />
+        </a>
+
+        <h4 class="text-center mb-4">تعديل بيانات مركبة</h4>
+
+        <label>رقم اللّوحة</label>
+        <input asp-for="LicensePlate" class="vehicle-input" />
+        <!-- Binds input to LicensePlate property -->
+        <span asp-validation-for="LicensePlate" class="text-danger"></span>
+        <!-- Displays validation error if exists -->
+
+        <label>الطّراز</label>
+        <input asp-for="Model" class="vehicle-input" />
+        <!-- Binds input to Model property -->
+        <span asp-validation-for="Model" class="text-danger"></span>
+
+        <label>سنة التّصنيع</label>
+        <input asp-for="Year" type="number" class="vehicle-input"/>
+        <!-- Binds input to Year property -->
+        <span asp-validation-for="Year" class="text-danger"></span>
+
+        <button type="submit" class="vehicles-btn-edit">تعديل</button>
+        <!-- Submits updated vehicle data -->
+    </div>
+
+</form>
+
+<!---------------------------------------------------------------------------------------->
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        <!-- Loads client-side validation scripts -->
+    }
+}
+

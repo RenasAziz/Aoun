@@ -1,0 +1,47 @@
+﻿@model Aoun.Models.Vehicle
+<!-- View uses Vehicle model to bind form inputs -->
+
+<form asp-action="Add" method="post" class="vehicles-page">
+    <!-- Sends POST request to Add action to insert new vehicle -->
+
+    <div class="vehicle-form-card">
+
+        <!-- Back arrow -->
+        <a href="javascript:history.back()" class="auth-back">
+            <!-- Returns to previous page -->
+            <img src="/images/back-arrow.png" alt="Back" />
+        </a>
+
+        <h4 class="text-center mb-4">إضافة مركبة جديدة</h4>
+
+        <label>رقم اللّوحة</label>
+        <input asp-for="LicensePlate" class="vehicle-input" placeholder="مثال: أ ب ت 1234" />
+        <!-- Input bound to LicensePlate property -->
+        <span asp-validation-for="LicensePlate" class="text-danger"></span>
+
+        <label>الطّراز</label>
+        <input asp-for="Model" class="vehicle-input" placeholder="مثال: سبورتاج" />
+        <!-- Input bound to Model property -->
+        <span asp-validation-for="Model" class="text-danger"></span>
+
+        <label>سنة التّصنيع</label>
+        <input asp-for="Year" type="number" class="vehicle-input" placeholder="مثال: 2024" />
+        <!-- Input bound to Year property -->
+        <span asp-validation-for="Year" class="text-danger"></span>
+
+        <button type="submit" class="vehicles-btn-primary">إضافة</button>
+        <!-- Submits form to create new vehicle -->
+    </div>
+
+</form>
+
+<!---------------------------------------------------------------------------------------->
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        <!-- Enables client-side validation using jQuery validation -->
+    }
+}
+
+

@@ -1,0 +1,34 @@
+﻿@{
+    ViewData["Title"] = "الإعدادات";
+    Layout = "_Layout";
+}
+
+<div class="static-page">
+    <!-- Main container -->
+
+    <div class="vehicles-header">
+        <!-- Page header section -->
+        <h3 class="mb-0">الإعدادات</h3>
+
+        <div class="headerImg">
+            <img src="~/images/settings.png" alt="settings">
+        </div>
+
+    </div>
+
+    <div class="menu-buttons">
+        <a asp-action="Profile" class="menu-btn">الحساب</a>
+        <!-- Redirects to Profile action -->
+
+        <a asp-action="Notifications" class="menu-btn">الإشعارات</a>
+        <!-- Redirects to Notifications action -->
+
+        <a asp-action="Privacy" class="menu-btn">الأمان والخصوصية</a>
+        <!-- Redirects to Privacy action -->
+
+        <a asp-action="Help" class="menu-btn">الدعم والمساعدة</a>
+        <!-- Redirects to Help page -->
+    </div>
+
+</div>
+

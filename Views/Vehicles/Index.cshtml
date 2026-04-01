@@ -1,0 +1,99 @@
+﻿@model IEnumerable<Aoun.Models.Vehicle>
+<!-- This view receives a collection (list) of Vehicle objects from the controller -->
+
+<div class="vehicles-page">
+    <!-- Main container for the vehicles page -->
+
+    <!-- TITLE CARD -->
+    <div class="vehicles-header">
+        <!-- Page header section -->
+        <h3 class="mb-0">مركباتي</h3>
+
+        <div class="headerImg">
+            <img src="~/images/vehicle.png" alt="vehicle">
+        </div>
+
+    </div>
+
+    <!---------------------------------------------------------------------------------------->
+
+    <!-- ADD BUTTON -->
+    <a asp-action="Add" class="vehicles-btn-primary text-center d-block">
+        <!-- Link that navigates to the Add action in VehicleController -->
+        <!-- asp-action automatically generates the correct URL -->
+        + إضافة مركبة جديدة
+    </a>
+
+    <!---------------------------------------------------------------------------------------->
+
+    <!-- SECTION TITLE -->
+    <h5 class="vehicles-section-title">جميع المركبات المسجلة</h5>
+
+    <!-- SEARCH BAR -->
+    <form method="get" asp-action="Index" asp-controller="Vehicles" class="search-container">
+        <!-- Form sends a GET request to Index action -->
+        <!-- Used for filtering/searching vehicles -->
+
+        <input type="text"
+               name="searchString"
+               value="@ViewData["CurrentFilter"]"
+
+               placeholder="بحث"
+               class="search-input"/>
+
+        <button type="submit" class="search-icon-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+        </button>
+
+    </form>
+
+    <!---------------------------------------------------------------------------------------->
+
+    <div class="vehicles-grid">
+
+    @foreach (var item in Model)
+    {
+
+        <!-- Loop through each Vehicle object in the Model -->
+
+        <div class="vehicle-card">
+            <!-- Card container for a single vehicle -->
+
+            <!-- ACTION ICONS -->
+            <div class="vehicle-actions">
+                <!-- Delete button -->
+                <a asp-action="Delete" asp-route-id="@item.VehicleId">
+                    <!-- Sends VehicleId to Delete action -->
+                    <img src="~/images/deleteBin.png" class="action-icon" />
+                </a>
+
+                <a asp-action="Edit" asp-route-id="@item.VehicleId">
+                    <!-- Sends VehicleId to Edit action -->
+                    <img src="~/images/editBox.png" class="action-icon" />
+                </a>
+            </div>
+
+            <!-- VEHICLE INFO -->
+            <div class="vehicle-info">
+                <!-- Displays vehicle information -->
+                <h6 class="vehicle-title">
+                    <img src="/images/car.png" alt="car" />
+                    سيارة - @item.LicensePlate
+                    <!-- Displays vehicle license plate -->
+                </h6>
+
+                <p>الطراز: @item.Model</p>
+                <!-- Displays vehicle model -->
+
+                <p>سنة التصنيع: @item.Year</p>
+                <!-- Displays manufacturing year -->
+
+            </div>
+        </div>
+    }
+
+    </div>
+
+</div>
+
+

@@ -1,0 +1,63 @@
+﻿@model Aoun.Models.User
+
+@{
+    Layout = "_Layout";
+    var driver = ViewBag.Driver as Aoun.Models.Driver;
+    // Retrieves Driver object passed from controller using ViewBag
+}
+
+<div class="profile-wrapper">
+    <!-- Main profile page container -->
+
+    <!-- Green Header -->
+    <div class="profile-header">
+        <h2>الملف الشخصي</h2>
+    </div>
+
+    <!-- Avatar -->
+    <div class="profile-icon">
+        <i class="fa-solid fa-user"></i>
+        <!-- Font Awesome user icon -->
+    </div>
+
+    <!---------------------------------------------------------------------------------------->
+
+    <!-- White Card -->
+    <div class="profile-card">
+        <!-- Contains user profile fields -->
+
+        <div class="profile-field">
+            <label>الاسم</label>
+            <input type="text" value="@driver?.DriverName" readonly />
+            <!-- Displays driver's name (nullable safe access using ?) -->
+        </div>
+
+        <div class="profile-field">
+            <label>رقم الجوال</label>
+            <input type="text" value="@Model.PhoneNumber" readonly />
+            <!-- Displays user's phone number -->
+        </div>
+
+        <div class="profile-field">
+            <label>البريد الإلكتروني</label>
+            <input type="text" value="@Model.Email" readonly />
+            <!-- Displays user's email -->
+        </div>
+
+        <div class="profile-field">
+            <label>رقم رخصة القيادة</label>
+            <input type="text" value="@driver?.LicenseNumber" readonly />
+            <!-- Displays driver's license number -->
+        </div>
+
+        <div class="profile-field">
+            <label>كلمة المرور</label>
+            <input type="password" value="******" readonly />
+            <!-- Password hidden for security -->
+        </div>
+
+    </div>
+</div>
+
+
+
