@@ -13,5 +13,7 @@
         public string Status { get; set; } = "قيد المراجعة";
 
         public string StatusCssClass { get; set; } = "st-pending";
+
+        public string? AccidentType { get; set; }
     }
 }

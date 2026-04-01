@@ -30,13 +30,12 @@ namespace Aoun.Controllers
             if (!string.IsNullOrEmpty(searchString))
             {
                 accidentsQuery = accidentsQuery.Where(a =>
-                    a.AccidentId.ToString().Contains(searchString));
+                    a.AccidentId.ToString().Contains(searchString) ||
+                    a.AccidentType.Contains(searchString) ||
+                    a.Status.Contains(searchString));
             }
 
-            var accidents = await _context.Accidents
-                .Include(a => a.AccidentReport)
-                .OrderByDescending(a => a.AccidentDate)
-                .ToListAsync();
+            var accidents = await accidentsQuery.ToListAsync();
 
             var viewModel = new AccidentListViewModel();
 
@@ -59,7 +58,8 @@ namespace Aoun.Controllers
                     AccidentDate = accident.AccidentDate,
                     FaultPercentage = fault,
                     Status = status,
-                    StatusCssClass = statusClass
+                    StatusCssClass = statusClass,
+                    AccidentType = accident.AccidentType
                 });
             }
 

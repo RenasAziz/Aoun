@@ -24,7 +24,7 @@
         <input type="text"
                name="searchString"
                value="@ViewData["CurrentFilter"]"
-               placeholder="بحث"
+               placeholder="ابحث بالرقم المرجعي أو بنوع أو حالة الحادث"
                class="search-input" />
 
         <button type="submit" class="search-icon-box">
@@ -43,6 +43,11 @@
                 <div class="acc-main">
                     <div class="acc-id">
                         @accident.AccidentNumber
+                    </div>
+
+                    <div class="acc-type">
+                        <span class="label">نوع الحادث</span>
+                        <span class="value">@accident.AccidentType</span>
                     </div>
 
                     <div class="acc-fault">
