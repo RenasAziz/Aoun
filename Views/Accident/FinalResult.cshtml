@@ -4,6 +4,19 @@
     ViewData["Title"] = "النتيجة النهائية";
 }
 
+@functions {
+    public string GetArabicLabel(string? label)
+    {
+        return label?.ToLower() switch
+        {
+            "front" => "أمامي",
+            "back" => "خلفي",
+            "side" => "جانبي",
+            _ => label ?? "غير معروف"
+        };
+    }
+}
+
 <div class="container py-4" dir="rtl">
 
     @if (Model.HasConflicts)
@@ -75,6 +88,48 @@
                 <div style="white-space: pre-line;">@Model.DecisionExplanation</div>
             </div>
         </div>
+
+
+
+        @if (!string.IsNullOrWhiteSpace(Model.Damage1PredictedLabel) || !string.IsNullOrWhiteSpace(Model.Damage2PredictedLabel))
+        {
+            <div class="card shadow-sm rounded-4 border-0 mb-4">
+                <div class="card-body">
+                    <h5 class="fw-bold text-success mb-3">نتائج تصنيف صور الضرر</h5>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.Damage1PredictedLabel))
+                    {
+                        <div class="bg-light rounded-4 p-3 mb-3 d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-muted small">صورة الضرر الأولى</div>
+                                <div class="fw-bold fs-6 text-dark">@GetArabicLabel(Model.Damage1PredictedLabel)</div>
+                            </div>
+                            <div>
+                                <span class="badge bg-success-subtle text-success border">
+                                    نسبة الثقة: @Model.Damage1PredictionConfidence%
+                                </span>
+                            </div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(Model.Damage2PredictedLabel))
+                    {
+                        <div class="bg-light rounded-4 p-3 d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="text-muted small">صورة الضرر الثانية</div>
+                                <div class="fw-bold fs-6 text-dark">@GetArabicLabel(Model.Damage2PredictedLabel)</div>
+                            </div>
+                            <div>
+                                <span class="badge bg-success-subtle text-success border">
+                                    نسبة الثقة: @Model.Damage2PredictionConfidence%
+                                </span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
     </div>
 
     <div class="d-grid gap-3">

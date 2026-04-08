@@ -7,6 +7,8 @@ using System.IO;
 using Aoun.Services;
 using System.Data;
 using Aoun.Filters;
+using System.Net.Http.Headers;
+using System.Text.Json;
 
 namespace Aoun.Controllers
 {
@@ -18,21 +20,24 @@ namespace Aoun.Controllers
         private readonly ConflictService _conflictService;
         private readonly ConflictPackService _conflictPackService;
         private readonly LiabilityRuleEngineService _liabilityRuleEngineService;
+        private readonly IHttpClientFactory _httpClientFactory;
 
         private const string FreeTextQuestionCode = "FREE_TEXT_ACCIDENT_DESC";
 
         public AccidentController(
-            AounDbContext context,
-            QuestionnaireService questionnaireService,
-            ConflictService conflictService,
-            ConflictPackService conflictPackService,
-            LiabilityRuleEngineService liabilityRuleEngineService)
+           AounDbContext context,
+           QuestionnaireService questionnaireService,
+           ConflictService conflictService,
+           ConflictPackService conflictPackService,
+           LiabilityRuleEngineService liabilityRuleEngineService,
+           IHttpClientFactory httpClientFactory)
         {
             _context = context;
             _questionnaireService = questionnaireService;
             _conflictService = conflictService;
             _conflictPackService = conflictPackService;
             _liabilityRuleEngineService = liabilityRuleEngineService;
+            _httpClientFactory = httpClientFactory;
         }
 
         // =========================================================
@@ -507,6 +512,8 @@ namespace Aoun.Controllers
                 { "Damage1", (vm.DamagePhoto1, "صورة الضرر الأولى") },
                 { "Damage2", (vm.DamagePhoto2, "صورة الضرر الثانية") }
             };
+            string? damage1Url = null;
+            string? damage2Url = null;
 
             foreach (var kv in requiredFiles)
             {
@@ -573,7 +580,6 @@ namespace Aoun.Controllers
                     DriverUserId = driverUserId
                 });
             }
-
             foreach (var kv in optionalFiles)
             {
                 string label = kv.Key;
@@ -584,6 +590,12 @@ namespace Aoun.Controllers
 
                 var url = await SaveImageAsync(file, vm.AccidentId, role, label);
 
+                if (label == "Damage1")
+                    damage1Url = url;
+
+                if (label == "Damage2")
+                    damage2Url = url;
+
                 _context.Images.Add(new Image
                 {
                     AccidentId = vm.AccidentId,
@@ -592,6 +604,65 @@ namespace Aoun.Controllers
                     UploadDate = DateTime.Now,
                     DriverUserId = driverUserId
                 });
+            }
+
+            await _context.SaveChangesAsync();
+
+            Image? damage1Image = null;
+            Image? damage2Image = null;
+
+            if (!string.IsNullOrWhiteSpace(damage1Url))
+            {
+                damage1Image = await _context.Images.FirstOrDefaultAsync(i =>
+                    i.AccidentId == vm.AccidentId &&
+                    i.DriverUserId == driverUserId &&
+                    i.ImagePath == damage1Url);
+            }
+
+            if (!string.IsNullOrWhiteSpace(damage2Url))
+            {
+                damage2Image = await _context.Images.FirstOrDefaultAsync(i =>
+                    i.AccidentId == vm.AccidentId &&
+                    i.DriverUserId == driverUserId &&
+                    i.ImagePath == damage2Url);
+            }
+
+            if (damage1Image != null && !string.IsNullOrWhiteSpace(damage1Url))
+            {
+                var physicalPath1 = Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    "wwwroot",
+                    damage1Url.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString())
+                );
+
+                var prediction1 = await PredictSingleImageAsync(physicalPath1);
+
+                if (prediction1 != null && prediction1.Success)
+                {
+                    damage1Image.PredictedLabel = prediction1.Label;
+                    damage1Image.PredictionConfidence = prediction1.Confidence;
+                    damage1Image.PredictionModel = prediction1.ModelName;
+                    damage1Image.PredictionDate = DateTime.Now;
+                }
+            }
+
+            if (damage2Image != null && !string.IsNullOrWhiteSpace(damage2Url))
+            {
+                var physicalPath2 = Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    "wwwroot",
+                    damage2Url.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString())
+                );
+
+                var prediction2 = await PredictSingleImageAsync(physicalPath2);
+
+                if (prediction2 != null && prediction2.Success)
+                {
+                    damage2Image.PredictedLabel = prediction2.Label;
+                    damage2Image.PredictionConfidence = prediction2.Confidence;
+                    damage2Image.PredictionModel = prediction2.ModelName;
+                    damage2Image.PredictionDate = DateTime.Now;
+                }
             }
 
             await _context.SaveChangesAsync();
@@ -625,6 +696,39 @@ namespace Aoun.Controllers
             await file.CopyToAsync(stream);
 
             return $"/uploads/{folderName}/{driverFolder}/{fileName}";
+        }
+
+        private async Task<SinglePredictionResponse?> PredictSingleImageAsync(string physicalPath)
+        {
+            if (!System.IO.File.Exists(physicalPath))
+                return null;
+
+            var client = _httpClientFactory.CreateClient();
+
+            using var content = new MultipartFormDataContent();
+            await using var fs = new FileStream(physicalPath, FileMode.Open, FileAccess.Read);
+            using var fileContent = new StreamContent(fs);
+
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
+            content.Add(fileContent, "image", Path.GetFileName(physicalPath));
+
+            var response = await client.PostAsync("http://127.0.0.1:8000/predict-single", content);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return new SinglePredictionResponse
+                {
+                    Success = false,
+                    Error = $"Prediction API failed: {response.StatusCode}"
+                };
+            }
+
+            var json = await response.Content.ReadAsStringAsync();
+
+            return JsonSerializer.Deserialize<SinglePredictionResponse>(
+                json,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
         }
 
         // =========================================================
@@ -1342,6 +1446,20 @@ namespace Aoun.Controllers
                 return RedirectToAction(nameof(Reviewing), new { accidentId, role });
             }
 
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == null)
+                return RedirectToAction("Login", "Auth");
+
+            var damageImages = await _context.Images
+                .Where(i => i.AccidentId == accidentId
+                         && i.DriverUserId == currentUserId.Value
+                         && (i.Label == "Damage1" || i.Label == "Damage2"))
+                .OrderBy(i => i.ImageId)
+                .ToListAsync();
+
+            var damage1 = damageImages.FirstOrDefault(i => i.Label == "Damage1");
+            var damage2 = damageImages.FirstOrDefault(i => i.Label == "Damage2");
+
             var vm = new FinalResultViewModel
             {
                 AccidentId = accidentId,
@@ -1357,7 +1475,15 @@ namespace Aoun.Controllers
                 FaultPercentDriver2 = report.FaultPercentDriver2 ?? 0,
                 FinalConfidenceScore = report.FinalConfidenceScore ?? 0,
                 FinalConfidenceLabel = report.FinalConfidenceLabel ?? "—",
-                DecisionExplanation = report.DecisionExplanation ?? "—"
+                DecisionExplanation = report.DecisionExplanation ?? "—",
+
+                Damage1PredictedLabel = damage1?.PredictedLabel,
+                Damage1PredictionConfidence = damage1?.PredictionConfidence,
+
+                Damage2PredictedLabel = damage2?.PredictedLabel,
+                Damage2PredictionConfidence = damage2?.PredictionConfidence
+
+
             };
 
             vm.HasConflicts = await _context.AccidentConflicts

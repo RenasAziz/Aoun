@@ -39,5 +39,17 @@ public partial class Image
     [ForeignKey("DriverUserId")]
     public virtual User? User { get; set; }
 
+    [Column("predicted_label")]
+    public string? PredictedLabel { get; set; }
+
+    [Column("prediction_confidence")]
+    public double? PredictionConfidence { get; set; }
+
+    [Column("prediction_model")]
+    public string? PredictionModel { get; set; }
+
+    [Column("prediction_date")]
+    public DateTime? PredictionDate { get; set; }
+
     public virtual Accident Accident { get; set; } = null!;
 }

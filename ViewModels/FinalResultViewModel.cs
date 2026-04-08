@@ -23,6 +23,11 @@ namespace Aoun.ViewModels
 
         public string DecisionExplanation { get; set; } = "";
         public bool HasConflicts { get; set; }
+        public string? Damage1PredictedLabel { get; set; }
+        public double? Damage1PredictionConfidence { get; set; }
+
+        public string? Damage2PredictedLabel { get; set; }
+        public double? Damage2PredictionConfidence { get; set; }
 
         // Arabic: نسبة الطرف الحالي المعروض له التقرير
         // English: fault percentage for current viewer
