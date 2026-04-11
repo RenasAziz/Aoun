@@ -1,72 +1,96 @@
 ﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
 
-<html>
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Aoun</title>
 
-    <link rel="stylesheet" href="~/css/site.css" />
+    <!-- ✅ SAME CSS AS MAIN LAYOUT -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Aoun.styles.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
-<!-- Side Menu (Frontend Only) -->
-<aside class="side-menu">
-
-    <div class="menu-header">
-        <button class="close-menu" id="closeMenu" aria-label="إغلاق">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
-    </div>
-
-    <nav class="menu-nav">
-
-        <div class="menu-section">
-            <a href="#" class="menu-item">
-                <i class="fa-solid fa-house"></i>
-                <span>الصفحة الرئيسية</span>
-            </a>
-        </div>
-
-        <div class="menu-section">
-            <a href="#" class="menu-item">
-                <i class="fa-solid fa-circle-question"></i>
-                <span>مركز المساعدة</span>
-            </a>
-
-            <a href="#" class="menu-item">
-                <i class="fa-solid fa-envelope"></i>
-                <span>تواصل معنا</span>
-            </a>
-
-            <a href="#" class="menu-item">
-                <i class="fa-solid fa-circle-info"></i>
-                <span>عن عون</span>
-            </a>
-        </div>
-
-        <!-- Login instead of Logout -->
-        <div class="menu-section login">
-            <a href="#" class="menu-item login-item">
-                <i class="fa-solid fa-right-to-bracket"></i>
-                <span>تسجيل الدخول</span>
-            </a>
-        </div>
-
-    </nav>
-</aside>
-
-
 
 <body>
-    <div>
+
+    <main role="main" class="pb-3">
+
+        <!-- ✅ HEADER -->
+        <header class="app-bar">
+            <div class="app-bar-icons">
+                <button class="icon-btn" id="menuToggle">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+
+                <button class="icon-btn bell">
+                    <i class="fa-solid fa-bell"></i>
+                </button>
+            </div>
+
+            <div class="app-bar-logo">
+                <img src="~/images/logo.png" class="app-logo" />
+            </div>
+        </header>
+
+        <!-- ✅ SIDEBAR (NOW INSIDE BODY) -->
+        <aside class="side-menu">
+
+            <div class="menu-header">
+                <button class="close-menu" id="closeMenu">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <nav class="menu-nav">
+
+                <div class="menu-section">
+                    <a asp-controller="Home" asp-action="HomePage" class="menu-item">
+                        <i class="fa-solid fa-house"></i>
+                        <span>الصفحة الرئيسية</span>
+                    </a>
+                </div>
+
+                <div class="menu-section">
+                    <a asp-controller="Pages" asp-action="Help" class="menu-item">
+                        <i class="fa-solid fa-circle-question"></i>
+                        <span>مركز المساعدة</span>
+                    </a>
+
+                    <a asp-controller="Pages" asp-action="Contact" class="menu-item">
+                        <i class="fa-solid fa-envelope"></i>
+                        <span>تواصل معنا</span>
+                    </a>
+
+                    <a asp-controller="Pages" asp-action="About" class="menu-item">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <span>عن عون</span>
+                    </a>
+                </div>
+
+                <div class="menu-section login">
+                    <a asp-controller="Auth" asp-action="Login" class="menu-item login-item">
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                        <span>تسجيل الدخول</span>
+                    </a>
+                </div>
+
+            </nav>
+        </aside>
+
+        <div class="menu-overlay"></div>
+
+        <!-- ✅ PAGE CONTENT -->
         @RenderBody()
-    </div>
 
+    </main>
 
-
+    <!-- ✅ SAME JS AS MAIN -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
+
 </body>
 </html>

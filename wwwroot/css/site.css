@@ -177,6 +177,20 @@
         background: #145c43;
     }
 
+/* Logout button fix (make form button look like link) */
+.menu-section.logout form {
+    margin: 0;
+}
+
+.menu-section.logout button {
+    background: none;
+    border: none;
+    padding: 0;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+}
+
 /* ==================================================
    MISCELLANEOUS
    ================================================== */
