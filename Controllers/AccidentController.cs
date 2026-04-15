@@ -10,6 +10,7 @@ using Aoun.Filters;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
+
 namespace Aoun.Controllers
 {
     public class AccidentController : Controller
@@ -666,6 +667,50 @@ namespace Aoun.Controllers
                 }
             }
 
+            if (damage1Image != null && !string.IsNullOrWhiteSpace(damage1Url))
+            {
+                var physicalPath1 = Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    "wwwroot",
+                    damage1Url.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString())
+                );
+
+                var segmentation1 = await PredictSegmentationAsync(physicalPath1);
+
+                if (segmentation1 != null && segmentation1.Success)
+                {
+                    damage1Image.SegmentationResultPath = segmentation1.ResultImageUrl;
+                    damage1Image.SegmentationModel = segmentation1.ModelName;
+                    damage1Image.SegmentationDate = DateTime.Now;
+                    damage1Image.SegmentationHasDamage = segmentation1.HasDamage;
+
+                    await _context.SaveChangesAsync();
+                    await SaveSegmentationDetectionsAsync(damage1Image, segmentation1);
+                }
+            }
+
+            if (damage2Image != null && !string.IsNullOrWhiteSpace(damage2Url))
+            {
+                var physicalPath2 = Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    "wwwroot",
+                    damage2Url.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString())
+                );
+
+                var segmentation2 = await PredictSegmentationAsync(physicalPath2);
+
+                if (segmentation2 != null && segmentation2.Success)
+                {
+                    damage2Image.SegmentationResultPath = segmentation2.ResultImageUrl;
+                    damage2Image.SegmentationModel = segmentation2.ModelName;
+                    damage2Image.SegmentationDate = DateTime.Now;
+                    damage2Image.SegmentationHasDamage = segmentation2.HasDamage;
+
+                    await _context.SaveChangesAsync();
+                    await SaveSegmentationDetectionsAsync(damage2Image, segmentation2);
+                }
+            }
+
             await _context.SaveChangesAsync();
 
             return RedirectToAction("SelectVehicle", new { accidentId = vm.AccidentId, role = role });
@@ -732,6 +777,65 @@ namespace Aoun.Controllers
             );
         }
 
+        private async Task<SegmentationPredictionResponse?> PredictSegmentationAsync(string physicalPath)
+        {
+            if (!System.IO.File.Exists(physicalPath))
+                return null;
+
+            var client = _httpClientFactory.CreateClient();
+
+            using var content = new MultipartFormDataContent();
+            await using var fs = new FileStream(physicalPath, FileMode.Open, FileAccess.Read);
+            using var fileContent = new StreamContent(fs);
+
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
+            content.Add(fileContent, "image", Path.GetFileName(physicalPath));
+
+            var response = await client.PostAsync("http://127.0.0.1:8000/predict-segmentation", content);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return new SegmentationPredictionResponse
+                {
+                    Success = false,
+                    Error = $"Segmentation API failed: {response.StatusCode}"
+                };
+            }
+
+            var json = await response.Content.ReadAsStringAsync();
+
+            return JsonSerializer.Deserialize<SegmentationPredictionResponse>(
+                json,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+        }
+
+        private async Task SaveSegmentationDetectionsAsync(Image image, SegmentationPredictionResponse segmentation)
+        {
+            var oldDetections = await _context.ImageSegmentationDetections
+                .Where(d => d.AccidentId == image.AccidentId && d.ImageId == image.ImageId)
+                .ToListAsync();
+
+            if (oldDetections.Count > 0)
+                _context.ImageSegmentationDetections.RemoveRange(oldDetections);
+
+            if (segmentation.Detections != null && segmentation.Detections.Count > 0)
+            {
+                foreach (var det in segmentation.Detections)
+                {
+                    _context.ImageSegmentationDetections.Add(new ImageSegmentationDetection
+                    {
+                        AccidentId = image.AccidentId,
+                        ImageId = image.ImageId,
+                        DamageLabel = det.Label,
+                        Confidence = det.Confidence,
+                        CreatedAt = DateTime.Now
+                    });
+                }
+            }
+
+            await _context.SaveChangesAsync();
+        }
         // =========================================================
         // Select Vehicle
         // =========================================================
@@ -1452,6 +1556,7 @@ namespace Aoun.Controllers
                 return RedirectToAction("Login", "Auth");
 
             var damageImages = await _context.Images
+                .Include(i => i.ImageSegmentationDetections)
                 .Where(i => i.AccidentId == accidentId
                          && i.DriverUserId == currentUserId.Value
                          && (i.Label == "Damage1" || i.Label == "Damage2"))
@@ -1482,17 +1587,31 @@ namespace Aoun.Controllers
                 Damage1PredictionConfidence = damage1?.PredictionConfidence,
 
                 Damage2PredictedLabel = damage2?.PredictedLabel,
-                Damage2PredictionConfidence = damage2?.PredictionConfidence
+                Damage2PredictionConfidence = damage2?.PredictionConfidence,
 
+                Damage1SegmentationResultPath = damage1?.SegmentationResultPath,
+                Damage1SegmentationHasDamage = damage1?.SegmentationHasDamage,
+                Damage1SegmentationDetections = damage1?.ImageSegmentationDetections
+                    .Select(d => new SegmentationDetectionDisplayItem
+                    {
+                        Label = d.DamageLabel ?? "",
+                        Confidence = d.Confidence
+                    }).ToList() ?? new List<SegmentationDetectionDisplayItem>(),
 
+                Damage2SegmentationResultPath = damage2?.SegmentationResultPath,
+                Damage2SegmentationHasDamage = damage2?.SegmentationHasDamage,
+                Damage2SegmentationDetections = damage2?.ImageSegmentationDetections
+                    .Select(d => new SegmentationDetectionDisplayItem
+                    {
+                        Label = d.DamageLabel ?? "",
+                        Confidence = d.Confidence
+                    }).ToList() ?? new List<SegmentationDetectionDisplayItem>(),
+
+                HasConflicts = await _context.AccidentConflicts.AnyAsync(c => c.AccidentId == accidentId)
             };
-
-            vm.HasConflicts = await _context.AccidentConflicts
-                .AnyAsync(c => c.AccidentId == accidentId);
 
             return View(vm);
         }
-
         // =========================================================
         // Feedback
         // =========================================================
@@ -1575,11 +1694,15 @@ namespace Aoun.Controllers
 
             TempData["FeedbackSuccess"] = "تم إرسال تقييمك بنجاح. شكرًا لك.";
 
-            return RedirectToAction(nameof(FinalResult), new
-            {
-                accidentId = vm.AccidentId,
-                role = vm.Role
-            });
+            return RedirectToAction(nameof(FeedbackSubmitted));
+        }
+
+
+        [AuthorizeUser]
+        [HttpGet]
+        public IActionResult FeedbackSubmitted()
+        {
+            return View();
         }
     }
 }

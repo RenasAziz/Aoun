@@ -1,0 +1,29 @@
+﻿@{
+    ViewData["Title"] = "تم تبليغ الحادث بنجاح";
+    Layout = "_Layout";
+}
+
+<div class="report-success-page" dir="rtl">
+    <div class="report-success-shell">
+        <div class="report-success-card">
+            <img src="~/images/Done.png" alt="تم بنجاح" class="report-success-image" />
+
+            <h1 class="report-success-title">تم تبليغ الحادث بنجاح!</h1>
+
+            <p class="report-success-text-main">
+                نؤكد أنه تم رفع جميع بيانات الحادث وحفظها، وسيقوم محقق الحوادث بمراجعتها
+                قريباً واعتماد النتيجة رسمياً.
+            </p>
+
+            <p class="report-success-text-sub">
+                يمكنك الآن مغادرة الصفحة، سنرسل لك إشعاراً فور تحديث حالة الحادث.
+            </p>
+
+            <a asp-controller="Home"
+               asp-action="HomePage"
+               class="report-success-btn">
+                العودة للرئيسية
+            </a>
+        </div>
+    </div>
+</div>

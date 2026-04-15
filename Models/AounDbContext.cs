@@ -41,6 +41,7 @@ public partial class AounDbContext : DbContext
     public virtual DbSet<Involve> Involves { get; set; }
     public virtual DbSet<QuestionOption> QuestionOptions { get; set; }
     public DbSet<AccidentConflict> AccidentConflicts { get; set; }
+    public virtual DbSet<ImageSegmentationDetection> ImageSegmentationDetections { get; set; }
 
 
 
@@ -239,6 +240,17 @@ public partial class AounDbContext : DbContext
                   .HasForeignKey(d => d.VehicleId)
                   .OnDelete(DeleteBehavior.ClientSetNull)
                   .HasConstraintName("FK_Involves_Vehicle");
+        });
+
+
+        modelBuilder.Entity<ImageSegmentationDetection>(entity =>
+        {
+            entity.HasKey(e => e.DetectionId);
+
+            entity.HasOne(d => d.Image)
+                .WithMany(p => p.ImageSegmentationDetections)
+                .HasForeignKey(d => new { d.AccidentId, d.ImageId })
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
 

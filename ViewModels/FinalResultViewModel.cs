@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Aoun.ViewModels
+﻿namespace Aoun.ViewModels
 {
     public class FinalResultViewModel
     {
@@ -23,14 +21,29 @@ namespace Aoun.ViewModels
 
         public string DecisionExplanation { get; set; } = "";
         public bool HasConflicts { get; set; }
+
         public string? Damage1PredictedLabel { get; set; }
         public double? Damage1PredictionConfidence { get; set; }
 
         public string? Damage2PredictedLabel { get; set; }
         public double? Damage2PredictionConfidence { get; set; }
 
-        // Arabic: نسبة الطرف الحالي المعروض له التقرير
-        // English: fault percentage for current viewer
+        public string? Damage1SegmentationResultPath { get; set; }
+        public bool? Damage1SegmentationHasDamage { get; set; }
+        public List<SegmentationDetectionDisplayItem> Damage1SegmentationDetections { get; set; } = new();
+
+        public string? Damage2SegmentationResultPath { get; set; }
+        public bool? Damage2SegmentationHasDamage { get; set; }
+        public List<SegmentationDetectionDisplayItem> Damage2SegmentationDetections { get; set; } = new();
+
+        public bool HasDamageImages
+            => !string.IsNullOrWhiteSpace(Damage1PredictedLabel)
+            || !string.IsNullOrWhiteSpace(Damage2PredictedLabel)
+            || Damage1SegmentationHasDamage == true
+            || Damage2SegmentationHasDamage == true
+            || !string.IsNullOrWhiteSpace(Damage1SegmentationResultPath)
+            || !string.IsNullOrWhiteSpace(Damage2SegmentationResultPath);
+
         public int CurrentDriverFaultPercent
             => Role == 2 ? FaultPercentDriver2 : FaultPercentDriver1;
 
@@ -51,5 +64,11 @@ namespace Aoun.ViewModels
 
         public string FormattedTime
             => AccidentTime.HasValue ? AccidentTime.Value.ToString("hh\\:mm") : "—";
+    }
+
+    public class SegmentationDetectionDisplayItem
+    {
+        public string Label { get; set; } = "";
+        public double? Confidence { get; set; }
     }
 }

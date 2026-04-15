@@ -51,6 +51,22 @@ public partial class Image
     [Column("prediction_date")]
     public DateTime? PredictionDate { get; set; }
 
+    [Column("segmentation_result_path")]
+    public string? SegmentationResultPath { get; set; }
+
+    [Column("segmentation_model")]
+    public string? SegmentationModel { get; set; }
+
+    [Column("segmentation_date")]
+    public DateTime? SegmentationDate { get; set; }
+
+    [Column("segmentation_has_damage")]
+    public bool? SegmentationHasDamage { get; set; }
+
+    [InverseProperty("Image")]
+    public virtual ICollection<ImageSegmentationDetection> ImageSegmentationDetections { get; set; }
+        = new List<ImageSegmentationDetection>();
+
     public virtual Accident Accident { get; set; } = null!;
 }
  

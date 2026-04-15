@@ -9,12 +9,8 @@ namespace Aoun.ViewModels
         public int Role { get; set; } // 1 or 2
 
 
-        // Arabic: صور موقع الضرر (2 صور)
-        // English: Damage photos (2 photos)
-        [Required(ErrorMessage = "الرجاء رفع صورة الضرر الأولى")]
+        // صور الضرر (اختيارية)
         public IFormFile? DamagePhoto1 { get; set; }
-
-        [Required(ErrorMessage = "الرجاء رفع صورة الضرر الثانية")]
         public IFormFile? DamagePhoto2 { get; set; }
 
         // Arabic: صور جوانب السيارة (4 صور)

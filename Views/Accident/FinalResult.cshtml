@@ -15,125 +15,256 @@
             _ => label ?? "غير معروف"
         };
     }
+
+    public string GetArabicDamageLabel(string? label)
+    {
+        return label?.ToLower() switch
+        {
+            "dent" => "بعج",
+            "scratch" => "خدش",
+            "smash" => "تهشم",
+            "glass_break" => "كسر زجاج",
+            _ => label ?? "غير معروف"
+        };
+    }
 }
 
-<div class="container py-4" dir="rtl">
+<div class="fr" dir="rtl">
 
     @if (Model.HasConflicts)
     {
-        <div class="alert alert-warning rounded-4 shadow-sm mb-4">
-            <strong>تم رصد تناقض بين إجابات الطرفين</strong><br />
-            قد يؤثر هذا التناقض على دقة التقييم الأولي، وسيتواصل معكم محقق الحوادث للتأكد من صحة المعلومات.
+        <div class="fr__alert">
+            <div class="fr__alertIcon">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div class="fr__alertContent">
+                <div class="fr__alertTitle">تم رصد تناقض بين إجابات الطرفين</div>
+                <div class="fr__alertText">
+                    قد يؤثر هذا التناقض على دقة التقييم الأولي، وسيتواصل معكم محقق الحوادث للتأكد من صحة المعلومات.
+                </div>
+            </div>
         </div>
     }
 
-    <div class="alert alert-warning rounded-4 shadow-sm mb-4">
-        <strong>تم رصد تناقض بين إجابات الطرفين</strong><br />
-        قد يؤثر هذا التناقض على دقة التقييم الأولي، وسيتواصل معكم محقق الحوادث للتأكد من صحة المعلومات.
-    </div>
-
-    <div class="card shadow-sm rounded-4 border-0 mb-4">
-        <div class="card-body">
-            <h4 class="text-success fw-bold">@Model.AccidentCode</h4>
-            <hr />
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <div><strong>التاريخ</strong></div>
-                    <div>@Model.FormattedDate</div>
-                </div>
-                <div class="col-md-4">
-                    <div><strong>الوقت</strong></div>
-                    <div>@Model.FormattedTime</div>
-                </div>
-                <div class="col-md-4">
-                    <div><strong>الموقع</strong></div>
-                    <div>@Model.Location</div>
-                </div>
+    <section class="fr__card">
+        <div class="fr__cardHead">
+            <div class="fr__cardIcon">
+                <i class="fa-solid fa-file-circle-check"></i>
             </div>
-        </div>
-    </div>
-
-    <div class="card shadow-sm rounded-4 border-0 mb-4">
-        <div class="card-body">
-            <h5 class="fw-bold text-success mb-3">نوع الحادث والنتيجة</h5>
-
-            <div class="bg-light rounded-4 p-3 mb-3">
-                <div class="text-muted small">نوع الحادث المحدد</div>
-                <div class="fw-bold fs-5 text-success">@Model.AccidentClassification</div>
-                <div class="mt-2">
-                    <span class="badge bg-success-subtle text-success border">
-                        مستوى الثقة: @Model.ConfidencePercentText
-                    </span>
-                </div>
-            </div>
-
-            <h6 class="fw-bold mb-3">نسبة الخطأ المقترحة:</h6>
-
-            <div class="bg-light rounded-4 p-3 mb-2 d-flex justify-content-between">
-                <div>
-                    <div class="text-muted small">@Model.OtherDriverLabel</div>
-                </div>
-                <div class="fw-bold text-success">@Model.OtherDriverFaultPercent%</div>
-            </div>
-
-            <div class="bg-light rounded-4 p-3 mb-3 d-flex justify-content-between">
-                <div>
-                    <div class="text-muted small">@Model.CurrentDriverLabel</div>
-                </div>
-                <div class="fw-bold text-danger">@Model.CurrentDriverFaultPercent%</div>
-            </div>
-
-            <div class="bg-light rounded-4 p-3">
-                <div class="fw-bold text-success mb-2">مبررات القرار</div>
-                <div style="white-space: pre-line;">@Model.DecisionExplanation</div>
+            <div>
+                <h2 class="fr__title">النتيجة النهائية</h2>
+                <div class="fr__subtitle">@Model.AccidentCode</div>
             </div>
         </div>
 
+        <div class="fr__metaGrid">
+            <div class="fr__metaItem">
+                <div class="fr__metaLabel">
+                    <i class="fa-regular fa-calendar"></i>
+                    التاريخ
+                </div>
+                <div class="fr__metaValue">@Model.FormattedDate</div>
+            </div>
 
+            <div class="fr__metaItem">
+                <div class="fr__metaLabel">
+                    <i class="fa-regular fa-clock"></i>
+                    الوقت
+                </div>
+                <div class="fr__metaValue">@Model.FormattedTime</div>
+            </div>
 
-        @if (!string.IsNullOrWhiteSpace(Model.Damage1PredictedLabel) || !string.IsNullOrWhiteSpace(Model.Damage2PredictedLabel))
+            <div class="fr__metaItem fr__metaItem--full">
+                <div class="fr__metaLabel">
+                    <i class="fa-solid fa-location-dot"></i>
+                    الموقع
+                </div>
+                <div class="fr__metaValue">@Model.Location</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="fr__card">
+        <div class="fr__sectionHead">
+            <div class="fr__sectionIcon">
+                <i class="fa-solid fa-scale-balanced"></i>
+            </div>
+            <h3 class="fr__sectionTitle">نوع الحادث والنتيجة</h3>
+        </div>
+
+        <div class="fr__resultBox">
+            <div class="fr__resultLabel">نوع الحادث المحدد</div>
+            <div class="fr__resultValue">@Model.AccidentClassification</div>
+            <div class="fr__badge">
+                <i class="fa-solid fa-shield-heart"></i>
+                مستوى الثقة: @Model.ConfidencePercentText
+            </div>
+        </div>
+
+        <div class="fr__splitTitle">نسبة الخطأ المقترحة</div>
+
+        <div class="fr__faultList">
+            <div class="fr__faultItem">
+                <div class="fr__faultSide">
+                    <i class="fa-solid fa-user"></i>
+                    <span>@Model.OtherDriverLabel</span>
+                </div>
+                <div class="fr__faultPercent fr__faultPercent--success">@Model.OtherDriverFaultPercent%</div>
+            </div>
+
+            <div class="fr__faultItem">
+                <div class="fr__faultSide">
+                    <i class="fa-solid fa-user-check"></i>
+                    <span>@Model.CurrentDriverLabel</span>
+                </div>
+                <div class="fr__faultPercent fr__faultPercent--danger">@Model.CurrentDriverFaultPercent%</div>
+            </div>
+        </div>
+
+        <div class="fr__explainBox">
+            <div class="fr__boxTitle">
+                <i class="fa-solid fa-circle-info"></i>
+                مبررات القرار
+            </div>
+            <div class="fr__paragraph">@Model.DecisionExplanation</div>
+        </div>
+    </section>
+
+    <section class="fr__card">
+        <div class="fr__sectionHead">
+            <div class="fr__sectionIcon">
+                <i class="fa-solid fa-camera"></i>
+            </div>
+            <h3 class="fr__sectionTitle">نتائج صور الضرر</h3>
+        </div>
+
+        @if (!Model.HasDamageImages)
         {
-            <div class="card shadow-sm rounded-4 border-0 mb-4">
-                <div class="card-body">
-                    <h5 class="fw-bold text-success mb-3">نتائج تصنيف صور الضرر</h5>
+            <div class="fr__empty">
+                <div class="fr__emptyIcon">
+                    <i class="fa-regular fa-image"></i>
+                </div>
+                <div class="fr__emptyTitle">لا يوجد ضرر</div>
+                <div class="fr__emptyText">لم يتم إرفاق صور ضرر لهذا الطرف.</div>
+            </div>
+        }
+        else
+        {
+            @if (!string.IsNullOrWhiteSpace(Model.Damage1PredictedLabel)
+           || !string.IsNullOrWhiteSpace(Model.Damage1SegmentationResultPath)
+           || (Model.Damage1SegmentationDetections != null && Model.Damage1SegmentationDetections.Any()))
+            {
+                <div class="fr__damageCard">
+                    <div class="fr__damageHead">
+                        <div class="fr__damageTitle">
+                            <i class="fa-solid fa-image"></i>
+                            صورة الضرر الأولى
+                        </div>
+                    </div>
 
                     @if (!string.IsNullOrWhiteSpace(Model.Damage1PredictedLabel))
                     {
-                        <div class="bg-light rounded-4 p-3 mb-3 d-flex justify-content-between align-items-center">
-                            <div>
-                                <div class="text-muted small">صورة الضرر الأولى</div>
-                                <div class="fw-bold fs-6 text-dark">@GetArabicLabel(Model.Damage1PredictedLabel)</div>
-                            </div>
-                            <div>
-                                <span class="badge bg-success-subtle text-success border">
-                                    نسبة الثقة: @Model.Damage1PredictionConfidence%
-                                </span>
-                            </div>
+                        <div class="fr__infoRow">
+                            <div class="fr__infoLabel">تصنيف جهة الضرر</div>
+                            <div class="fr__infoValue">@GetArabicLabel(Model.Damage1PredictedLabel)</div>
+                            <div class="fr__infoMuted">نسبة الثقة: @Model.Damage1PredictionConfidence%</div>
                         </div>
                     }
+
+                    @if (!string.IsNullOrWhiteSpace(Model.Damage1SegmentationResultPath))
+                    {
+                        <div class="fr__imageWrap">
+                            <div class="fr__infoLabel fr__infoLabel--mb">صورة تحديد مناطق الضرر</div>
+                            <img src="@Model.Damage1SegmentationResultPath"
+                                 alt="نتيجة تحديد الضرر للصورة الأولى"
+                                 class="fr__image" />
+                        </div>
+                    }
+
+                    @if (Model.Damage1SegmentationDetections != null && Model.Damage1SegmentationDetections.Any())
+                    {
+                        <div class="fr__chipsTitle">أنواع الضرر المكتشفة</div>
+
+                        <div class="fr__detectList">
+                            @foreach (var det in Model.Damage1SegmentationDetections)
+                            {
+                                <div class="fr__detectItem">
+                                    <div class="fr__detectName">
+                                        <i class="fa-solid fa-screwdriver-wrench"></i>
+                                        @GetArabicDamageLabel(det.Label)
+                                    </div>
+                                    <div class="fr__detectConfidence">@det.Confidence%</div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else if (Model.Damage1SegmentationHasDamage == false)
+                    {
+                        <div class="fr__note">لم يتم رصد ضرر واضح في هذه الصورة.</div>
+                    }
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(Model.Damage2PredictedLabel)
+           || !string.IsNullOrWhiteSpace(Model.Damage2SegmentationResultPath)
+           || (Model.Damage2SegmentationDetections != null && Model.Damage2SegmentationDetections.Any()))
+            {
+                <div class="fr__damageCard">
+                    <div class="fr__damageHead">
+                        <div class="fr__damageTitle">
+                            <i class="fa-solid fa-image"></i>
+                            صورة الضرر الثانية
+                        </div>
+                    </div>
 
                     @if (!string.IsNullOrWhiteSpace(Model.Damage2PredictedLabel))
                     {
-                        <div class="bg-light rounded-4 p-3 d-flex justify-content-between align-items-center">
-                            <div>
-                                <div class="text-muted small">صورة الضرر الثانية</div>
-                                <div class="fw-bold fs-6 text-dark">@GetArabicLabel(Model.Damage2PredictedLabel)</div>
-                            </div>
-                            <div>
-                                <span class="badge bg-success-subtle text-success border">
-                                    نسبة الثقة: @Model.Damage2PredictionConfidence%
-                                </span>
-                            </div>
+                        <div class="fr__infoRow">
+                            <div class="fr__infoLabel">تصنيف جهة الضرر</div>
+                            <div class="fr__infoValue">@GetArabicLabel(Model.Damage2PredictedLabel)</div>
+                            <div class="fr__infoMuted">نسبة الثقة: @Model.Damage2PredictionConfidence%</div>
                         </div>
                     }
+
+                    @if (!string.IsNullOrWhiteSpace(Model.Damage2SegmentationResultPath))
+                    {
+                        <div class="fr__imageWrap">
+                            <div class="fr__infoLabel fr__infoLabel--mb">صورة تحديد مناطق الضرر</div>
+                            <img src="@Model.Damage2SegmentationResultPath"
+                                 alt="نتيجة تحديد الضرر للصورة الثانية"
+                                 class="fr__image" />
+                        </div>
+                    }
+
+                    @if (Model.Damage2SegmentationDetections != null && Model.Damage2SegmentationDetections.Any())
+                    {
+                        <div class="fr__chipsTitle">أنواع الضرر المكتشفة</div>
+
+                        <div class="fr__detectList">
+                            @foreach (var det in Model.Damage2SegmentationDetections)
+                            {
+                                <div class="fr__detectItem">
+                                    <div class="fr__detectName">
+                                        <i class="fa-solid fa-screwdriver-wrench"></i>
+                                        @GetArabicDamageLabel(det.Label)
+                                    </div>
+                                    <div class="fr__detectConfidence">@det.Confidence%</div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else if (Model.Damage2SegmentationHasDamage == false)
+                    {
+                        <div class="fr__note">لم يتم رصد ضرر واضح في هذه الصورة.</div>
+                    }
                 </div>
-            </div>
+            }
         }
+    </section>
 
-    </div>
-
-    <div class="d-grid gap-3">
-        <a class="btn btn-success btn-lg rounded-4" href="#">
+    <div class="fr__actions">
+        <a class="fr__btn fr__btn--primary" href="#">
+            <i class="fa-solid fa-file-arrow-down"></i>
             تحميل التقرير PDF
         </a>
 
@@ -141,7 +272,8 @@
            asp-controller="Accident"
            asp-route-accidentId="@Model.AccidentId"
            asp-route-role="@Model.Role"
-           class="your-button-class">
+           class="fr__btn fr__btn--secondary">
+            <i class="fa-solid fa-star"></i>
             التقييم
         </a>
     </div>
