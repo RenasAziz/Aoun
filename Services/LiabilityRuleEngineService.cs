@@ -113,7 +113,7 @@ namespace Aoun.Services
 
             report.FaultPercentDriver1 = result.FaultPercentDriver1;
             report.FaultPercentDriver2 = result.FaultPercentDriver2;
-            report.ApprovalStatus = "Pending";
+            report.ApprovalStatus = "قيد المراجعة";
             report.Summary = result.AccidentClassification;
 
             report.RuleId = result.RuleId;

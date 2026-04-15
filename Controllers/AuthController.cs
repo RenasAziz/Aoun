@@ -198,8 +198,8 @@ Handles all authentication-related functionality in the system:
             HttpContext.Session.SetInt32("UserId", user.UserId);
             HttpContext.Session.SetString("Role", user.Role);
 
-            // Get driver name from Driver table
-            if (user.Role.ToLower() == "driver")
+            // Driver name
+            if (user.Role != null && user.Role.Equals("driver", StringComparison.OrdinalIgnoreCase))
             {
                 var driver = _context.Drivers
                     .FirstOrDefault(d => d.UserId == user.UserId);
@@ -208,8 +208,18 @@ Handles all authentication-related functionality in the system:
                 {
                     HttpContext.Session.SetString("UserName", driver.DriverName);
                 }
+
+                return RedirectToAction("HomePage", "Home");
             }
 
+            // Inspector name
+            if (user.Role != null && user.Role.Equals("Inspector", StringComparison.OrdinalIgnoreCase))
+            {
+                HttpContext.Session.SetString("UserName", "محقق الحوادث");
+                return RedirectToAction("Index", "InspectorReports");
+            }
+
+            // fallback
             return RedirectToAction("HomePage", "Home");
 
         }

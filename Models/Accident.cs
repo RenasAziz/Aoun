@@ -34,6 +34,12 @@ public partial class Accident
     [StringLength(50)]
     public string? Status { get; set; }
 
+    [Column("latitude", TypeName = "decimal(10,7)")]
+    public decimal? Latitude { get; set; }
+
+    [Column("longitude", TypeName = "decimal(10,7)")]
+    public decimal? Longitude { get; set; }
+
     [InverseProperty("Accident")]
     public virtual AccidentReport? AccidentReport { get; set; }
 
@@ -49,8 +55,5 @@ public partial class Accident
     [InverseProperty("Accident")]
     public virtual ICollection<Report> Reports { get; set; } = new List<Report>();
 
-    // ✅ الصحيح: لا ForeignKey ولا InverseProperty هنا
-    // Arabic: العلاقة مع Vehicle تتم عبر جدول Involves
-    // English: Accident ↔ Vehicle relationship is via Involves join table
     public virtual ICollection<Involve> Involves { get; set; } = new List<Involve>();
 }

@@ -1,0 +1,621 @@
+﻿@model Aoun.ViewModels.InspectorReportDetailsViewModel
+
+@{
+    ViewData["Title"] = "تفاصيل التقرير";
+}
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<div class="container py-4" dir="rtl">
+
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div class="text-end">
+            <h3 class="fw-bold mb-1">تفاصيل التقرير</h3>
+            <div class="text-muted">مراجعة شاملة لبيانات الحادث والتقرير</div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            @if (Model.ApprovalStatus == "قيد المراجعة")
+            {
+                <span class="badge text-dark px-3 py-2 rounded-pill" style="background-color:#ffc107;">
+                    <i class="fa-solid fa-hourglass-half ms-1"></i>
+                    @Model.ApprovalStatus
+                </span>
+            }
+            else if (Model.ApprovalStatus == "مقبول")
+            {
+                <span class="badge bg-success px-3 py-2 rounded-pill">
+                    <i class="fa-solid fa-circle-check ms-1"></i>
+                    @Model.ApprovalStatus
+                </span>
+            }
+            else
+            {
+                <span class="badge bg-danger px-3 py-2 rounded-pill">
+                    <i class="fa-solid fa-circle-xmark ms-1"></i>
+                    @Model.ApprovalStatus
+                </span>
+            }
+
+            <a asp-action="Index" class="btn btn-outline-secondary rounded-3">
+                <i class="fa-solid fa-arrow-right ms-1"></i>
+                رجوع
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["ReviewSuccess"] != null)
+    {
+        <div class="alert alert-success rounded-4 shadow-sm mb-4">
+            @TempData["ReviewSuccess"]
+        </div>
+    }
+
+    @if (TempData["ReviewError"] != null)
+    {
+        <div class="alert alert-danger rounded-4 shadow-sm mb-4">
+            @TempData["ReviewError"]
+        </div>
+    }
+
+    <!-- Top Summary -->
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body text-center">
+                    <div class="text-muted small mb-2">
+                        <i class="fa-solid fa-hashtag ms-1"></i>
+                        رقم الحادث
+                    </div>
+                    <div class="fw-bold fs-5">@Model.AccidentCode</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body text-center">
+                    <div class="text-muted small mb-2">
+                        <i class="fa-solid fa-gavel ms-1"></i>
+                        القاعدة
+                    </div>
+                    <div class="fw-bold fs-5">@Model.RuleId</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body text-center">
+                    <div class="text-muted small mb-2">
+                        <i class="fa-solid fa-scale-balanced ms-1"></i>
+                        الطرف الأول / الثاني
+                    </div>
+                    <div class="fw-bold fs-5">@Model.FaultPercentDriver1% / @Model.FaultPercentDriver2%</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body text-center">
+                    <div class="text-muted small mb-2">
+                        <i class="fa-solid fa-shield-halved ms-1"></i>
+                        درجة الثقة
+                    </div>
+                    <div class="fw-bold fs-5">@Model.ConfidencePercentText</div>
+                    <div class="text-muted small">@Model.FinalConfidenceLabel</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Review Actions -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3">
+                <i class="fa-solid fa-user-check ms-2"></i>
+                قرار المحقق
+            </h5>
+
+            <form asp-action="UpdateReview" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="AccidentId" value="@Model.AccidentId" />
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">ملاحظة المحقق</label>
+                    <textarea name="InspectorNote" class="form-control rounded-3" rows="4"
+                              placeholder="اكتبي ملاحظاتك هنا إن وجدت...">@Model.InspectorNote</textarea>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2">
+                    <button type="submit" name="ApprovalStatus" value="مقبول" class="btn btn-success rounded-3 px-4">
+                        <i class="fa-solid fa-circle-check ms-1"></i>
+                        اعتماد التقرير
+                    </button>
+
+                    <button type="submit" name="ApprovalStatus" value="مرفوض" class="btn btn-danger rounded-3 px-4">
+                        <i class="fa-solid fa-circle-xmark ms-1"></i>
+                        رفض التقرير
+                    </button>
+                </div>
+
+                @if (Model.ReviewedAt.HasValue || !string.IsNullOrWhiteSpace(Model.ReviewedByName))
+                {
+                    <div class="mt-3 small text-muted">
+                        <i class="fa-solid fa-clock-rotate-left ms-1"></i>
+                        آخر مراجعة:
+                        @(Model.ReviewedAt?.ToString("yyyy-MM-dd HH:mm") ?? "—")
+                        @if (!string.IsNullOrWhiteSpace(Model.ReviewedByName))
+                        {
+                            <span> - بواسطة @Model.ReviewedByName</span>
+                        }
+                    </div>
+                }
+            </form>
+        </div>
+    </div>
+
+    <!-- Accident Info -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3">
+                <i class="fa-solid fa-car-burst ms-2"></i>
+                معلومات الحادث
+            </h5>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-3">
+                    <div class="border rounded-3 p-3 h-100">
+                        <div class="text-muted small mb-1">التاريخ</div>
+                        <div class="fw-semibold">@Model.FormattedDate</div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="border rounded-3 p-3 h-100">
+                        <div class="text-muted small mb-1">الوقت</div>
+                        <div class="fw-semibold">@Model.FormattedTime</div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="border rounded-3 p-3 h-100">
+                        <div class="text-muted small mb-1">نوع الحادث</div>
+                        <div class="fw-semibold">@Model.AccidentType</div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="border rounded-3 p-3 h-100">
+                        <div class="text-muted small mb-1">حالة الحادث</div>
+                        <div class="fw-semibold">@Model.AccidentStatus</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <div class="text-muted small mb-1">الموقع النصي</div>
+                <div class="fw-semibold">@Model.Location</div>
+            </div>
+
+            <div id="accidentMap" style="height: 320px; border-radius: 18px; overflow: hidden;"></div>
+
+            @if (!Model.Latitude.HasValue || !Model.Longitude.HasValue)
+            {
+                <div class="small text-muted mt-2">
+                    لا توجد إحداثيات محفوظة لهذا الحادث حاليًا.
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- System Decision -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3">
+                <i class="fa-solid fa-microchip ms-2"></i>
+                قرار النظام
+            </h5>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <div class="border rounded-3 p-3 h-100">
+                        <div class="text-muted small mb-1">التصنيف</div>
+                        <div class="fw-semibold">@Model.AccidentClassification</div>
+                    </div>
+                </div>
+
+                <div class="col-md-2">
+                    <div class="border rounded-3 p-3 h-100">
+                        <div class="text-muted small mb-1">الثقة الأساسية</div>
+                        <div class="fw-semibold">@Model.BaseConfidenceScore</div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="border rounded-3 p-3 h-100">
+                        <div class="text-muted small mb-1">خصم التناقضات</div>
+                        <div class="fw-semibold">@Model.ConflictPenaltyScore</div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="border rounded-3 p-3 h-100">
+                        <div class="text-muted small mb-1">إضافة الأدلة</div>
+                        <div class="fw-semibold">@Model.EvidenceBonusScore</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border rounded-3 p-3">
+                <div class="text-muted small mb-2">سبب القرار</div>
+                <div class="lh-lg">@Model.DecisionExplanation</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Parties -->
+    <div class="row g-4 mb-4">
+
+        @if (Model.Party1 != null)
+        {
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-3">
+                            <i class="fa-solid fa-user ms-2"></i>
+                            @Model.Party1.PartyLabel
+                        </h5>
+
+                        <div class="row g-3">
+                            <div class="col-md-6"><div class="border rounded-3 p-3"><div class="text-muted small">الاسم</div><div class="fw-semibold">@Model.Party1.Name</div></div></div>
+                            <div class="col-md-6"><div class="border rounded-3 p-3"><div class="text-muted small">البريد</div><div class="fw-semibold">@Model.Party1.Email</div></div></div>
+                            <div class="col-md-6"><div class="border rounded-3 p-3"><div class="text-muted small">الجوال</div><div class="fw-semibold">@Model.Party1.PhoneNumber</div></div></div>
+                            <div class="col-md-6"><div class="border rounded-3 p-3"><div class="text-muted small">رقم الرخصة</div><div class="fw-semibold">@Model.Party1.LicenseNumber</div></div></div>
+                            <div class="col-md-6"><div class="border rounded-3 p-3"><div class="text-muted small">رقم اللوحة</div><div class="fw-semibold">@Model.Party1.VehiclePlate</div></div></div>
+                            <div class="col-md-6"><div class="border rounded-3 p-3"><div class="text-muted small">المركبة</div><div class="fw-semibold">@Model.Party1.VehicleModel</div></div></div>
+                            <div class="col-md-6"><div class="border rounded-3 p-3"><div class="text-muted small">اللون</div><div class="fw-semibold">@Model.Party1.VehicleColor</div></div></div>
+                            <div class="col-md-6"><div class="border rounded-3 p-3"><div class="text-muted small">السنة</div><div class="fw-semibold">@(Model.Party1.VehicleYear?.ToString() ?? "—")</div></div></div>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(Model.Party1.FreeText))
+                        {
+                            <div class="mt-3 border rounded-3 p-3">
+                                <div class="text-muted small mb-2">الوصف النصي</div>
+                                <div class="lh-lg">@Model.Party1.FreeText</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (Model.Party2 != null)
+        {
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-3">
+                            <i class="fa-solid fa-user ms-2"></i>
+                            @Model.Party2.PartyLabel
+                        </h5>
+
+                        <div class="row g-3">
+                            <div class="col-md-6"><div class="border rounded-3 p-3"><div class="text-muted small">الاسم</div><div class="fw-semibold">@Model.Party2.Name</div></div></div>
+                            <div class="col-md-6"><div class="border rounded-3 p-3"><div class="text-muted small">البريد</div><div class="fw-semibold">@Model.Party2.Email</div></div></div>
+                            <div class="col-md-6"><div class="border rounded-3 p-3"><div class="text-muted small">الجوال</div><div class="fw-semibold">@Model.Party2.PhoneNumber</div></div></div>
+                            <div class="col-md-6"><div class="border rounded-3 p-3"><div class="text-muted small">رقم الرخصة</div><div class="fw-semibold">@Model.Party2.LicenseNumber</div></div></div>
+                            <div class="col-md-6"><div class="border rounded-3 p-3"><div class="text-muted small">رقم اللوحة</div><div class="fw-semibold">@Model.Party2.VehiclePlate</div></div></div>
+                            <div class="col-md-6"><div class="border rounded-3 p-3"><div class="text-muted small">المركبة</div><div class="fw-semibold">@Model.Party2.VehicleModel</div></div></div>
+                            <div class="col-md-6"><div class="border rounded-3 p-3"><div class="text-muted small">اللون</div><div class="fw-semibold">@Model.Party2.VehicleColor</div></div></div>
+                            <div class="col-md-6"><div class="border rounded-3 p-3"><div class="text-muted small">السنة</div><div class="fw-semibold">@(Model.Party2.VehicleYear?.ToString() ?? "—")</div></div></div>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(Model.Party2.FreeText))
+                        {
+                            <div class="mt-3 border rounded-3 p-3">
+                                <div class="text-muted small mb-2">الوصف النصي</div>
+                                <div class="lh-lg">@Model.Party2.FreeText</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
+    </div>
+
+    <!-- Answers -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3">
+                <i class="fa-solid fa-list-check ms-2"></i>
+                الإجابات الأساسية
+            </h5>
+
+            @if (Model.CoreAnswers.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>السؤال</th>
+                                <th>إجابة الطرف الأول</th>
+                                <th>إجابة الطرف الثاني</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.CoreAnswers)
+                            {
+                                <tr>
+                                    <td class="fw-semibold">@item.QuestionTextAr</td>
+                                    <td>@item.Driver1AnswerCode</td>
+                                    <td>@item.Driver2AnswerCode</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-muted">لا توجد بيانات.</div>
+            }
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3">
+                <i class="fa-solid fa-arrows-rotate ms-2"></i>
+                إجابات التحقق
+            </h5>
+
+            @if (Model.MirrorAnswers.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>السؤال</th>
+                                <th>إجابة الطرف الأول</th>
+                                <th>إجابة الطرف الثاني</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.MirrorAnswers)
+                            {
+                                <tr>
+                                    <td class="fw-semibold">@item.QuestionTextAr</td>
+                                    <td>@item.Driver1AnswerCode</td>
+                                    <td>@item.Driver2AnswerCode</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-muted">لا توجد بيانات.</div>
+            }
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3">
+                <i class="fa-solid fa-diagram-project ms-2"></i>
+                أسئلة الحزم الإضافية
+            </h5>
+
+            @if (Model.ConflictBackAnswers.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>الحزمة</th>
+                                <th>السؤال</th>
+                                <th>إجابة الطرف الأول</th>
+                                <th>إجابة الطرف الثاني</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.ConflictBackAnswers)
+                            {
+                                <tr>
+                                    <td>@(item.PackName ?? "—")</td>
+                                    <td class="fw-semibold">@item.QuestionTextAr</td>
+                                    <td>@item.Driver1AnswerCode</td>
+                                    <td>@item.Driver2AnswerCode</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-muted">لا توجد بيانات.</div>
+            }
+        </div>
+    </div>
+
+    <!-- Conflicts -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3">
+                <i class="fa-solid fa-triangle-exclamation ms-2"></i>
+                التناقضات المكتشفة
+            </h5>
+
+            @if (Model.Conflicts.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>النوع</th>
+                                <th>الحدة</th>
+                                <th>الملخص</th>
+                                <th>الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Conflicts)
+                            {
+                                <tr>
+                                    <td>@item.ConflictType</td>
+                                    <td>@item.Severity</td>
+                                    <td>@item.Summary</td>
+                                    <td>
+                                        @if (item.IsResolved)
+                                        {
+                                            <span class="badge bg-success">تم الحل</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">معلّق</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-muted">لا توجد تناقضات مكتشفة.</div>
+            }
+        </div>
+    </div>
+
+    <!-- Images -->
+    <div class="row g-4">
+
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3">
+                        <i class="fa-solid fa-images ms-2"></i>
+                        صور الطرف الأول
+                    </h5>
+
+                    @if (Model.Party1Images.Any())
+                    {
+                        <div class="row g-3">
+                            @foreach (var img in Model.Party1Images)
+                            {
+                                <div class="col-md-6">
+                                    <div class="border rounded-3 p-2 h-100">
+                                        <img src="@img.ImagePath" class="img-fluid rounded-3 mb-2" alt="@img.Label" />
+                                        <div class="small fw-semibold">@img.Label</div>
+
+                                        @if (!string.IsNullOrWhiteSpace(img.PredictedLabel))
+                                        {
+                                            <div class="small text-muted mt-1">التصنيف: @img.PredictedLabel</div>
+                                        }
+
+                                        @if (img.PredictionConfidence.HasValue)
+                                        {
+                                            <div class="small text-muted">الثقة: @img.PredictionConfidenceText</div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-muted">لا توجد صور.</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3">
+                        <i class="fa-solid fa-images ms-2"></i>
+                        صور الطرف الثاني
+                    </h5>
+
+                    @if (Model.Party2Images.Any())
+                    {
+                        <div class="row g-3">
+                            @foreach (var img in Model.Party2Images)
+                            {
+                                <div class="col-md-6">
+                                    <div class="border rounded-3 p-2 h-100">
+                                        <img src="@img.ImagePath" class="img-fluid rounded-3 mb-2" alt="@img.Label" />
+                                        <div class="small fw-semibold">@img.Label</div>
+
+                                        @if (!string.IsNullOrWhiteSpace(img.PredictedLabel))
+                                        {
+                                            <div class="small text-muted mt-1">التصنيف: @img.PredictedLabel</div>
+                                        }
+
+                                        @if (img.PredictionConfidence.HasValue)
+                                        {
+                                            <div class="small text-muted">الثقة: @img.PredictionConfidenceText</div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-muted">لا توجد صور.</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var lat = @(Model.Latitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null");
+            var lng = @(Model.Longitude?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "null");
+
+            var map = L.map('accidentMap');
+
+            if (lat !== null && lng !== null) {
+                map.setView([lat, lng], 15);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; OpenStreetMap'
+                }).addTo(map);
+
+                L.marker([lat, lng]).addTo(map)
+                    .bindPopup('موقع الحادث')
+                    .openPopup();
+            } else {
+                map.setView([21.543333, 39.172779], 10);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; OpenStreetMap'
+                }).addTo(map);
+            }
+
+            setTimeout(function () {
+                map.invalidateSize();
+            }, 200);
+        });
+    </script>
+}

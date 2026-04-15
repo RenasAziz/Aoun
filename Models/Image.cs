@@ -53,3 +53,4 @@ public partial class Image
 
     public virtual Accident Accident { get; set; } = null!;
 }
+ 

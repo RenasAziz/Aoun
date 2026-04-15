@@ -24,7 +24,6 @@ public partial class AccidentReport
 
     [Column("approval_status")]
     [StringLength(50)]
-    [Unicode(false)]
     public string? ApprovalStatus { get; set; }
 
     [Column("pdf_path")]
@@ -38,10 +37,6 @@ public partial class AccidentReport
 
     [Column("accident_id")]
     public int AccidentId { get; set; }
-
-    // =========================
-    // New rule engine fields
-    // =========================
 
     [Column("rule_id")]
     [StringLength(20)]
@@ -72,7 +67,20 @@ public partial class AccidentReport
     [Column("decision_explanation")]
     public string? DecisionExplanation { get; set; }
 
+    [Column("inspector_note")]
+    [StringLength(1000)]
+    public string? InspectorNote { get; set; }
+
+    [Column("reviewed_at", TypeName = "datetime")]
+    public DateTime? ReviewedAt { get; set; }
+
+    [Column("reviewed_by_user_id")]
+    public int? ReviewedByUserId { get; set; }
+
     [ForeignKey("AccidentId")]
     [InverseProperty("AccidentReport")]
     public virtual Accident Accident { get; set; } = null!;
+
+    [ForeignKey("ReviewedByUserId")]
+    public virtual User? ReviewedByUser { get; set; }
 }

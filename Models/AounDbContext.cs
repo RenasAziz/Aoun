@@ -61,11 +61,34 @@ public partial class AounDbContext : DbContext
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
 
-            entity.HasOne(d => d.Accident).WithOne(p => p.AccidentReport)
+            entity.Property(e => e.ApprovalStatus)
+                  .HasMaxLength(50)
+                  .IsUnicode(true)
+                  .HasDefaultValue("قيد المراجعة");
+
+            entity.Property(e => e.InspectorNote)
+                  .HasColumnName("inspector_note")
+                  .HasMaxLength(1000)
+                  .IsUnicode(true);
+
+            entity.Property(e => e.ReviewedAt)
+                  .HasColumnName("reviewed_at")
+                  .HasColumnType("datetime");
+
+            entity.Property(e => e.ReviewedByUserId)
+                  .HasColumnName("reviewed_by_user_id");
+
+            entity.HasOne(d => d.Accident)
+                .WithOne(p => p.AccidentReport)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Report_Accident");
-        });
 
+            entity.HasOne(d => d.ReviewedByUser)
+                .WithMany()
+                .HasForeignKey(d => d.ReviewedByUserId)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_AccidentReport_ReviewedByUser");
+        });
 
 
         modelBuilder.Entity<Driver>(entity =>

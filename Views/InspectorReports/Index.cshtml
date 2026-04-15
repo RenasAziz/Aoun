@@ -1,0 +1,241 @@
+﻿@model Aoun.ViewModels.InspectorReportsIndexViewModel
+
+@{
+    ViewData["Title"] = "لوحة محقق الحوادث";
+}
+
+<div class="container py-4" dir="rtl">
+
+    <!-- Header -->
+    <div class="mb-4 text-end">
+        <h3 class="fw-bold mb-2">لوحة محقق الحوادث</h3>
+        <p class="text-muted mb-0">مراجعة واعتماد تقارير الحوادث</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="row g-3 mb-4 text-center">
+
+        <div class="col-md-3">
+            <div class="card shadow-sm rounded-4 border-0 h-100">
+                <div class="card-body py-4">
+                    <div class="mb-2 text-muted">
+                        <i class="fa-solid fa-file-lines ms-1"></i>
+                        إجمالي التقارير
+                    </div>
+                    <h3 class="fw-bold mb-0">@Model.TotalCount</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm rounded-4 border-0 h-100">
+                <div class="card-body py-4">
+                    <div class="mb-2 text-muted">
+                        <i class="fa-solid fa-hourglass-half ms-1"></i>
+                        قيد المراجعة
+                    </div>
+                    <h3 class="fw-bold text-warning mb-0">@Model.PendingCount</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm rounded-4 border-0 h-100">
+                <div class="card-body py-4">
+                    <div class="mb-2 text-muted">
+                        <i class="fa-solid fa-circle-check ms-1"></i>
+                        مقبول
+                    </div>
+                    <h3 class="fw-bold text-success mb-0">@Model.AcceptedCount</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm rounded-4 border-0 h-100">
+                <div class="card-body py-4">
+                    <div class="mb-2 text-muted">
+                        <i class="fa-solid fa-circle-xmark ms-1"></i>
+                        مرفوض
+                    </div>
+                    <h3 class="fw-bold text-danger mb-0">@Model.RejectedCount</h3>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Filters -->
+    <form method="get" class="card shadow-sm rounded-4 border-0 p-3 mb-4">
+        <div class="row g-2 align-items-center">
+
+            <div class="col-md-5">
+                <input type="text"
+                       name="search"
+                       class="form-control rounded-3"
+                       placeholder="ابحث برقم الحادث أو الموقع أو التصنيف..."
+                       value="@Model.Search" />
+            </div>
+
+            <div class="col-md-3">
+                <select name="statusFilter" class="form-select rounded-3">
+                    <option value="">كل الحالات</option>
+                    @if (Model.StatusFilter == "قيد المراجعة")
+                    {
+                        <option value="قيد المراجعة" selected>قيد المراجعة</option>
+                    }
+                    else
+                    {
+                        <option value="قيد المراجعة">قيد المراجعة</option>
+                    }
+
+                    @if (Model.StatusFilter == "مقبول")
+                    {
+                        <option value="مقبول" selected>مقبول</option>
+                    }
+                    else
+                    {
+                        <option value="مقبول">مقبول</option>
+                    }
+
+                    @if (Model.StatusFilter == "مرفوض")
+                    {
+                        <option value="مرفوض" selected>مرفوض</option>
+                    }
+                    else
+                    {
+                        <option value="مرفوض">مرفوض</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-dark w-100 rounded-3">
+                    <i class="fa-solid fa-magnifying-glass ms-1"></i>
+                    بحث
+                </button>
+            </div>
+
+            <div class="col-md-2">
+                <a asp-action="Index" class="btn btn-outline-secondary w-100 rounded-3">
+                    <i class="fa-solid fa-rotate-left ms-1"></i>
+                    إعادة ضبط
+                </a>
+            </div>
+
+        </div>
+    </form>
+
+    <!-- Reports -->
+    <div class="row g-4">
+        @if (!Model.Reports.Any())
+        {
+            <div class="col-12">
+                <div class="card shadow-sm rounded-4 border-0">
+                    <div class="card-body text-center py-5 text-muted">
+                        <i class="fa-regular fa-folder-open fa-2x mb-3 d-block"></i>
+                        لا توجد تقارير مطابقة
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            @foreach (var report in Model.Reports)
+            {
+                <div class="col-md-6">
+                    <div class="card shadow-sm rounded-4 border-0 h-100">
+                        <div class="card-body p-4 d-flex flex-column">
+
+                            <!-- Top Row -->
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <strong class="fs-5">@report.AccidentCode</strong>
+
+                                @if (report.Status == "قيد المراجعة")
+                                {
+                                    <span class="badge text-dark px-3 py-2 rounded-pill" style="background-color:#ffc107;">
+                                        <i class="fa-solid fa-hourglass-half ms-1"></i>
+                                        @report.Status
+                                    </span>
+                                }
+                                else if (report.Status == "مقبول")
+                                {
+                                    <span class="badge bg-success px-3 py-2 rounded-pill">
+                                        <i class="fa-solid fa-circle-check ms-1"></i>
+                                        @report.Status
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger px-3 py-2 rounded-pill">
+                                        <i class="fa-solid fa-circle-xmark ms-1"></i>
+                                        @report.Status
+                                    </span>
+                                }
+                            </div>
+
+                            <!-- Location -->
+                            <div class="small text-muted mb-2 d-flex align-items-center justify-content-end gap-2">
+                                <span>@report.Location</span>
+                                <i class="fa-solid fa-location-dot text-danger"></i>
+                            </div>
+
+                            <!-- Date + Time -->
+                            <div class="small text-muted mb-3 d-flex align-items-center justify-content-end gap-3 flex-wrap">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span>@report.FormattedDate</span>
+                                    <i class="fa-solid fa-calendar-days text-primary"></i>
+                                </div>
+
+                                <div class="d-flex align-items-center gap-2">
+                                    <span>@report.FormattedTime</span>
+                                    <i class="fa-solid fa-clock text-warning"></i>
+                                </div>
+                            </div>
+
+                            <!-- Classification -->
+                            <div class="mb-3 text-end">
+                                <div class="fw-bold fs-6">@report.AccidentClassification</div>
+                            </div>
+
+                            <!-- Fault Percent -->
+                            <div class="mb-2 text-end">
+                                <div class="small text-muted mb-1">
+                                    <i class="fa-solid fa-scale-balanced ms-1"></i>
+                                    نسب المسؤولية
+                                </div>
+                                <div class="fw-semibold">
+                                    الطرف الأول: @report.FaultPercentDriver1% |
+                                    الطرف الثاني: @report.FaultPercentDriver2%
+                                </div>
+                            </div>
+
+                            <!-- Confidence -->
+                            <div class="mb-4 text-end">
+                                <div class="small text-muted mb-1">
+                                    <i class="fa-solid fa-shield-halved ms-1"></i>
+                                    درجة الثقة
+                                </div>
+                                <div class="fw-semibold">
+                                    @report.ConfidencePercentText (@report.FinalConfidenceLabel)
+                                </div>
+                            </div>
+
+                            <!-- Button -->
+                            <div class="mt-auto">
+                                <a asp-action="Details"
+                                   asp-route-accidentId="@report.AccidentId"
+                                   class="btn btn-outline-dark w-100 rounded-3">
+                                    <i class="fa-solid fa-eye ms-1"></i>
+                                    عرض التفاصيل
+                                </a>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+</div>

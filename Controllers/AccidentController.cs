@@ -141,7 +141,6 @@ namespace Aoun.Controllers
             var currentUserId = GetCurrentUserId();
             if (currentUserId == null)
                 return RedirectToAction("Login", "Auth");
-
             var accident = new Accident
             {
                 Location = vm.LocationText,
@@ -149,7 +148,9 @@ namespace Aoun.Controllers
                 AccidentTime = time,
                 AccidentType = "تصادم",
                 Status = "انتظار",
-                Description = null
+                Description = null,
+                Latitude = vm.Latitude.HasValue ? Convert.ToDecimal(vm.Latitude.Value) : null,
+                Longitude = vm.Longitude.HasValue ? Convert.ToDecimal(vm.Longitude.Value) : null
             };
 
             _context.Accidents.Add(accident);
