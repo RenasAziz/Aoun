@@ -91,5 +91,18 @@ public class PagesController : Controller
     {
         return View();
     }
+
+    [AuthorizeUser]
+    public IActionResult Privacy()
+    {
+        return View();
+    }
+
+    [AuthorizeUser]
+    public IActionResult PrivacyPolicy()
+    {
+        return View();
+    }
+
 }
 

@@ -433,7 +433,14 @@ Handles all authentication-related functionality in the system:
             // Ensures session cookie is gone
             Response.Cookies.Delete(".AspNetCore.Session");
 
-            return RedirectToAction("Login");
+            return RedirectToAction("LogoutSuccess");
         }
+
+        [HttpGet]
+        public IActionResult LogoutSuccess()
+        {
+            return View();
+        }
+
     }
 }

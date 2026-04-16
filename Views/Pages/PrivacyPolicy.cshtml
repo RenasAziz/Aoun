@@ -1,0 +1,108 @@
+﻿@{
+    ViewData["Title"] = "سياسة الخصوصية";
+    Layout = "_Layout";
+}
+
+<div class="static-page">
+    <!-- Main container -->
+
+    <div class="card" style="position:relative;">
+
+        <!-- Back arrow -->
+        <a href="javascript:history.back()" class="auth-back"
+           style="position:absolute; top:15px; right:15px;">
+            <!-- Returns to previous page -->
+            <img src="/images/back-arrow.png" alt="Back" />
+        </a>
+
+        <h3>سياسة الخصوصية</h3>
+        <p>
+            نحن في "عون" نحرص على حماية بياناتك وضمان خصوصيتك أثناء استخدام النظام.
+        </p>
+    </div>
+
+    <!---------------------------------------------------------------------------------------->
+    <!-- ITEM 1 -->
+    <div class="faq-item">
+        <button class="faq-question">ما هي المعلومات التي نقوم بجمعها؟</button>
+
+        <div class="faq-answer">
+            <ul>
+                <li>البيانات الشخصية مثل الاسم والبريد الإلكتروني ورقم الهاتف</li>
+                <li>بيانات المركبة مثل رقم اللوحة والطراز وسنة التصنيع</li>
+                <li>صور الحوادث والتقارير المرتبطة بها</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- ITEM 2 -->
+    <div class="faq-item">
+        <button class="faq-question">كيف نستخدم معلوماتك؟</button>
+
+        <div class="faq-answer">
+            <ul>
+                <li>تقديم خدمات النظام وتحسينها</li>
+                <li>تحليل الحوادث باستخدام الذكاء الاصطناعي</li>
+                <li>التواصل معك عند الحاجة</li>
+                <li>تحسين تجربة المستخدم</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- ITEM 3 -->
+    <div class="faq-item">
+        <button class="faq-question">كيف نحمي بياناتك؟</button>
+
+        <div class="faq-answer">
+            نستخدم إجراءات أمنية وتقنيات حديثة لحماية بياناتك من الوصول غير المصرح به أو التعديل أو الحذف.
+        </div>
+    </div>
+
+    <!-- ITEM 4 -->
+    <div class="faq-item">
+        <button class="faq-question">هل نقوم بمشاركة بياناتك؟</button>
+
+        <div class="faq-answer">
+            لا نقوم بمشاركة بياناتك مع أي جهة خارجية إلا في الحالات التالية:
+            <ul>
+                <li>إذا طُلب ذلك قانونيًا</li>
+                <li>لحماية حقوق النظام أو المستخدمين</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- ITEM 5 -->
+    <div class="faq-item">
+        <button class="faq-question">ما هي حقوقك كمستخدم؟</button>
+
+        <div class="faq-answer">
+            <ul>
+                <li>الاطلاع على بياناتك</li>
+                <li>طلب تعديل أو حذف بياناتك</li>
+                <li>التواصل معنا لأي استفسار متعلق بالخصوصية</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- ITEM 6 -->
+    <div class="faq-item">
+        <button class="faq-question">هل يمكن تحديث سياسة الخصوصية؟</button>
+
+        <div class="faq-answer">
+            نعم، قد نقوم بتحديث هذه السياسة من وقت لآخر، وسيتم نشر التحديثات على هذه الصفحة.
+        </div>
+    </div>
+
+</div>
+
+<!---------------------------------------------------------------------------------------->
+@section Scripts {
+    <script>
+        document.querySelectorAll(".faq-question").forEach(btn => {
+            btn.addEventListener("click", function () {
+                this.classList.toggle("active");
+                this.nextElementSibling.classList.toggle("show");
+            });
+        });
+    </script>
+}

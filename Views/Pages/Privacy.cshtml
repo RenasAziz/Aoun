@@ -1,0 +1,30 @@
+﻿@{
+    ViewData["Title"] = "الأمان والخصوصية";
+    Layout = "_Layout";
+}
+
+<div class="static-page">
+    <!-- Main container -->
+
+    <div class="card" style="position:relative;">
+
+        <!-- Back arrow -->
+        <a href="javascript:history.back()" class="auth-back"
+           style="position:absolute; top:15px; right:15px;">
+            <!-- Returns to previous page -->
+            <img src="/images/back-arrow.png" alt="Back" />
+        </a>
+
+        <h3>الأمان والخصوصيّة</h3>
+        <p>
+            هنا يمكنك عرض معلومات تتعلق بأمان حسابك وخصوصيتك.
+        </p>
+
+    </div>
+
+    <div class="menu-buttons">
+        <a asp-controller="Auth" asp-action="ForgotPassword" class="menu-btn">تغيير كلمة المرور</a>
+        <a asp-action="PrivacyPolicy" class="menu-btn">سياسة الخصوصيّة</a>
+    </div>
+
+</div>

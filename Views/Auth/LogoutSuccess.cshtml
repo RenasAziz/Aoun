@@ -1,0 +1,26 @@
+﻿@{
+    ViewData["Title"] = "تم تسجيل الخروج";
+    Layout = "_AuthLayout";
+}
+
+<div class="auth-page">
+    <div class="auth-card">
+
+        <div style="margin: 24px 0;">
+            <i class="fa-solid fa-circle-check"
+               style="font-size:64px;color:#4CAF50;"></i>
+        </div>
+
+        <div class="auth-title">تم تسجيل الخروج بنجاح</div>
+
+        <a href="/Auth/Login" class="auth-btn" style="margin-top:20px">
+            تسجيل الدخول مرة أخرى
+        </a>
+    </div>
+</div>
+
+<script>
+    setTimeout(() => {
+        window.location.href = "/Auth/Login";
+    }, 4000);
+</script>

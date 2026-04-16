@@ -29,6 +29,10 @@
         <!-- Input bound to Year property -->
         <span asp-validation-for="Year" class="text-danger"></span>
 
+        <label>لون المركبة</label>
+        <input asp-for="Color" class="vehicle-input" placeholder="مثال: أبيض" />
+        <span asp-validation-for="Color" class="text-danger"></span>
+
         <button type="submit" class="vehicles-btn-primary">إضافة</button>
         <!-- Submits form to create new vehicle -->
     </div>
