@@ -7,7 +7,7 @@
 <div class="container py-4" dir="rtl">
 
     <!-- Header -->
-    <div class="mb-4 text-end">
+    <div class="mb-4 text-center">
         <h3 class="fw-bold mb-2">لوحة محقق الحوادث</h3>
         <p class="text-muted mb-0">مراجعة واعتماد تقارير الحوادث</p>
     </div>
@@ -149,7 +149,18 @@
 
                             <!-- Top Row -->
                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                <strong class="fs-5">@report.AccidentCode</strong>
+                                <div class="d-flex align-items-center gap-2">
+                                    <strong class="fs-5 mb-0">@report.AccidentCode</strong>
+
+                                    @if (report.HasConflicts)
+                                    {
+                                        <span class="text-warning"
+                                              title="يوجد تناقض في إجابات السائقين"
+                                              aria-label="يوجد تناقض في إجابات السائقين">
+                                            <i class="fa-solid fa-triangle-exclamation"></i>
+                                        </span>
+                                    }
+                                </div>
 
                                 @if (report.Status == "قيد المراجعة")
                                 {

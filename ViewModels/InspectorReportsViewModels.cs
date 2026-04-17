@@ -35,6 +35,7 @@ namespace Aoun.ViewModels
 
         public decimal FinalConfidenceScore { get; set; }
         public string FinalConfidenceLabel { get; set; } = "";
+        public bool HasConflicts { get; set; }
 
         public string FormattedDate
             => AccidentDate.HasValue ? AccidentDate.Value.ToString("yyyy-MM-dd") : "—";
@@ -101,8 +102,45 @@ namespace Aoun.ViewModels
 
         public string ConfidencePercentText
             => $"{FinalConfidenceScore * 100:0}%";
+
+        public InspectorDriverFeedbackViewModel? Party1Feedback { get; set; }
+        public InspectorDriverFeedbackViewModel? Party2Feedback { get; set; }
     }
 
+
+    public class InspectorDriverFeedbackViewModel
+    {
+        public int DriverUserId { get; set; }
+        public int? SatisfactionLevel { get; set; }
+        public string? Comment { get; set; }
+        public DateTime? FeedbackDate { get; set; }
+
+        public string SatisfactionText
+            => SatisfactionLevel switch
+            {
+                1 => "غير راضٍ جدًا",
+                2 => "غير راضٍ",
+                3 => "محايد",
+                4 => "راضٍ",
+                5 => "راضٍ جدًا",
+                _ => "لم يُرسل تقييمًا"
+            };
+
+        public string SatisfactionBadgeClass
+            => SatisfactionLevel switch
+            {
+                1 or 2 => "irp__feedbackBadge irp__feedbackBadge--danger",
+                3 => "irp__feedbackBadge irp__feedbackBadge--neutral",
+                4 or 5 => "irp__feedbackBadge irp__feedbackBadge--success",
+                _ => "irp__feedbackBadge"
+            };
+
+        public string SatisfactionLevelText
+            => SatisfactionLevel.HasValue ? $"{SatisfactionLevel}/5" : "—";
+
+        public string FeedbackDateText
+            => FeedbackDate.HasValue ? FeedbackDate.Value.ToString("yyyy-MM-dd HH:mm") : "—";
+    }
     public class InspectorPartyDetailsViewModel
     {
         public int UserId { get; set; }
@@ -136,6 +174,15 @@ namespace Aoun.ViewModels
 
         public string Driver1FreeText { get; set; } = "";
         public string Driver2FreeText { get; set; } = "";
+
+        public string Driver1AnswerTextAr { get; set; } = "—";
+        public string Driver2AnswerTextAr { get; set; } = "—";
+
+        public string? MirrorQuestionTextAr { get; set; }
+        public string? MirrorDriver1AnswerTextAr { get; set; }
+        public string? MirrorDriver2AnswerTextAr { get; set; }
+
+        public bool IsEvidence { get; set; }
     }
 
     public class InspectorConflictItemViewModel
@@ -164,6 +211,18 @@ namespace Aoun.ViewModels
 
         public string PredictionConfidenceText
             => PredictionConfidence.HasValue ? $"{PredictionConfidence.Value * 100:0.0}%" : "—";
+        public string? SegmentationResultPath { get; set; }
+        public bool? SegmentationHasDamage { get; set; }
+        public string? SegmentationModel { get; set; }
+
+        public List<InspectorSegmentationDetectionItemViewModel> SegmentationDetections { get; set; } = new();
+    }
+
+
+    public class InspectorSegmentationDetectionItemViewModel
+    {
+        public string Label { get; set; } = "";
+        public double? Confidence { get; set; }
     }
 
     public class InspectorReviewInputViewModel

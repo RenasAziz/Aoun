@@ -30,6 +30,38 @@ namespace Aoun.Controllers
                                u.Role.ToLower() == "inspector");
         }
 
+        private HashSet<string> GetRuleEvidenceCodes(string ruleId)
+        {
+            return ruleId switch
+            {
+                "R2" => new() { "CQ2", "M2" },
+                "R3" => new() { "CQ3", "M3" },
+                "R4" => new() { "CQ3", "M3" },
+                "R1" => new() { "CQ1", "M1" },
+                "R10" => new() { "CQ6", "CQ7", "CQ8" },
+                "R11" => new() { "CQ6", "CQ9" },
+                "R12" => new() { "CQ6" },
+                "R5" => new() { "CQ5" },
+                "R9" => new() { "CQ10", "CQ1" },
+                "R7" => new() { "CQ10", "M5" },
+                "R8" => new() { "CQ5", "CQ11" },
+                _ => new()
+            };
+        }
+
+        private bool IsMirrorMatch(string core, string mirror)
+        {
+            return (core, mirror) switch
+            {
+                ("CQ1", "M1") => true,
+                ("CQ2", "M2") => true,
+                ("CQ3", "M3") => true,
+                ("CQ6", "M4") => true,
+                ("CQ10", "M5") => true,
+                _ => false
+            };
+        }
+
         public async Task<IActionResult> Index(string? search, string? statusFilter)
         {
             if (!await CurrentUserIsInspectorAsync())
@@ -72,7 +104,8 @@ namespace Aoun.Controllers
                     FaultPercentDriver1 = r.FaultPercentDriver1 ?? 0,
                     FaultPercentDriver2 = r.FaultPercentDriver2 ?? 0,
                     FinalConfidenceScore = r.FinalConfidenceScore ?? 0,
-                    FinalConfidenceLabel = r.FinalConfidenceLabel ?? "—"
+                    FinalConfidenceLabel = r.FinalConfidenceLabel ?? "—",
+                    HasConflicts = _context.AccidentConflicts.Any(c => c.AccidentId == r.AccidentId)
                 })
                 .ToListAsync();
 
@@ -103,6 +136,8 @@ namespace Aoun.Controllers
 
             if (report == null)
                 return NotFound();
+
+            var evidenceCodes = GetRuleEvidenceCodes(report.RuleId);
 
             var participants = await _context.AccidentSessionParticipants
                 .AsNoTracking()
@@ -146,6 +181,29 @@ namespace Aoun.Controllers
                 .AsNoTracking()
                 .Where(a => a.AccidentId == accidentId && a.QuestionId == freeTextQuestionId)
                 .ToListAsync();
+
+            var feedbacks = await _context.DriverFeedbacks
+    .AsNoTracking()
+    .Where(f => f.AccidentId == accidentId)
+    .ToListAsync();
+
+            string? MapConflictTypeToPackName(ConflictType type)
+            {
+                return type switch
+                {
+                    ConflictType.LaneChange => "Pack-LaneChange",
+                    ConflictType.EnteringRoad => "Pack-EnteringRoad",
+                    ConflictType.SpecialMove => "Pack-SpecialMove",
+                    ConflictType.IntersectionControl => "Pack-Intersection",
+                    ConflictType.IntersectionCompliance => "Pack-Intersection",
+                    ConflictType.IntersectionEntryFirst => "Pack-Intersection",
+                    ConflictType.Position => "Pack-Position",
+                    ConflictType.Overtake => "Pack-OvertakeVsLeftTurn",
+                    _ => null
+                };
+            }
+
+
 
             InspectorPartyDetailsViewModel? BuildParty(byte role)
             {
@@ -194,6 +252,16 @@ namespace Aoun.Controllers
                 }
             ).ToListAsync();
 
+            var questionOptions = await _context.QuestionOptions
+    .AsNoTracking()
+    .Select(o => new
+    {
+        o.QuestionId,
+        o.OptionCode,
+        o.OptionTextAr
+    })
+    .ToListAsync();
+
             string GetAnswerCode(string questionCode, int driverUserId)
             {
                 return questionRows
@@ -210,6 +278,30 @@ namespace Aoun.Controllers
                     .FirstOrDefault() ?? "";
             }
 
+
+
+            string GetAnswerTextAr(string questionCode, int driverUserId)
+            {
+                var answerRow = questionRows
+                    .FirstOrDefault(x => x.QuestionCode == questionCode && x.DriverUserId == driverUserId);
+
+                if (answerRow == null)
+                    return "—";
+
+                if (!string.IsNullOrWhiteSpace(answerRow.FreeText))
+                    return answerRow.FreeText;
+
+                if (string.IsNullOrWhiteSpace(answerRow.SelectedOptionCode))
+                    return "—";
+
+                var optionText = questionOptions
+                    .FirstOrDefault(o => o.QuestionId == answerRow.QuestionId &&
+                                         o.OptionCode == answerRow.SelectedOptionCode)
+                    ?.OptionTextAr;
+
+                return string.IsNullOrWhiteSpace(optionText) ? answerRow.SelectedOptionCode ?? "—" : optionText;
+            }
+
             var questionMeta = questionRows
                 .GroupBy(x => new { x.QuestionId, x.QuestionCode, x.QuestionTextAr, x.QuestionType, x.PackName })
                 .Select(g => g.Key)
@@ -220,19 +312,40 @@ namespace Aoun.Controllers
             var role1UserId = participants.FirstOrDefault(p => p.Role == 1)?.DriverUserId ?? 0;
             var role2UserId = participants.FirstOrDefault(p => p.Role == 2)?.DriverUserId ?? 0;
 
-            var allAnswers = questionMeta
-                .Select(q => new InspectorAnswerCompareItemViewModel
+            InspectorDriverFeedbackViewModel? BuildFeedback(int driverUserId)
+            {
+                if (driverUserId <= 0) return null;
+
+                var feedback = feedbacks.FirstOrDefault(f => f.DriverUserId == driverUserId);
+                if (feedback == null) return null;
+
+                return new InspectorDriverFeedbackViewModel
                 {
-                    QuestionCode = q.QuestionCode ?? "",
-                    QuestionTextAr = q.QuestionTextAr ?? "",
-                    QuestionType = q.QuestionType ?? "",
-                    PackName = q.PackName,
-                    Driver1AnswerCode = role1UserId > 0 ? GetAnswerCode(q.QuestionCode ?? "", role1UserId) : "—",
-                    Driver2AnswerCode = role2UserId > 0 ? GetAnswerCode(q.QuestionCode ?? "", role2UserId) : "—",
-                    Driver1FreeText = role1UserId > 0 ? GetFreeText(q.QuestionCode ?? "", role1UserId) : "",
-                    Driver2FreeText = role2UserId > 0 ? GetFreeText(q.QuestionCode ?? "", role2UserId) : ""
-                })
-                .ToList();
+                    DriverUserId = feedback.DriverUserId,
+                    SatisfactionLevel = feedback.SatisfactionLevel,
+                    Comment = feedback.Comment,
+                    FeedbackDate = feedback.FeedbackDate
+                };
+            }
+
+            var allAnswers = questionMeta
+               .Select(q => new InspectorAnswerCompareItemViewModel
+               {
+                   QuestionCode = q.QuestionCode ?? "",
+                   QuestionTextAr = q.QuestionTextAr ?? "",
+                   QuestionType = q.QuestionType ?? "",
+                   PackName = q.PackName,
+
+                   Driver1AnswerCode = role1UserId > 0 ? GetAnswerCode(q.QuestionCode ?? "", role1UserId) : "—",
+                   Driver2AnswerCode = role2UserId > 0 ? GetAnswerCode(q.QuestionCode ?? "", role2UserId) : "—",
+
+                   Driver1AnswerTextAr = role1UserId > 0 ? GetAnswerTextAr(q.QuestionCode ?? "", role1UserId) : "—",
+                   Driver2AnswerTextAr = role2UserId > 0 ? GetAnswerTextAr(q.QuestionCode ?? "", role2UserId) : "—",
+
+                   Driver1FreeText = role1UserId > 0 ? GetFreeText(q.QuestionCode ?? "", role1UserId) : "",
+                   Driver2FreeText = role2UserId > 0 ? GetFreeText(q.QuestionCode ?? "", role2UserId) : ""
+               })
+               .ToList();
 
             var conflicts = await _context.AccidentConflicts
                 .AsNoTracking()
@@ -249,8 +362,21 @@ namespace Aoun.Controllers
                 })
                 .ToListAsync();
 
+            var relevantPackNames = conflicts
+    .Select(c =>
+    {
+        if (Enum.TryParse<ConflictType>(c.ConflictType, out var parsedType))
+            return MapConflictTypeToPackName(parsedType);
+
+        return null;
+    })
+    .Where(x => !string.IsNullOrWhiteSpace(x))
+    .Distinct()
+    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
             var images = await _context.Images
                 .AsNoTracking()
+                .Include(i => i.ImageSegmentationDetections)
                 .Where(i => i.AccidentId == accidentId)
                 .OrderBy(i => i.DriverUserId)
                 .ThenBy(i => i.ImageId)
@@ -288,39 +414,87 @@ namespace Aoun.Controllers
                 Party1 = BuildParty(1),
                 Party2 = BuildParty(2),
 
-                CoreAnswers = allAnswers.Where(a => a.QuestionType == "Core").ToList(),
-                MirrorAnswers = allAnswers.Where(a => a.QuestionType == "Mirror").ToList(),
-                ConflictBackAnswers = allAnswers.Where(a => a.QuestionType == "ConflictBack").ToList(),
+                Party1Feedback = BuildFeedback(role1UserId),
+                Party2Feedback = BuildFeedback(role2UserId),
+
+
+                CoreAnswers = allAnswers
+    .Where(a => a.QuestionType == "Core")
+    .Select(core =>
+    {
+        var mirror = allAnswers.FirstOrDefault(m =>
+            m.QuestionType == "Mirror" &&
+            IsMirrorMatch(core.QuestionCode, m.QuestionCode));
+
+        return new InspectorAnswerCompareItemViewModel
+        {
+            QuestionCode = core.QuestionCode,
+            QuestionTextAr = core.QuestionTextAr,
+
+            Driver1AnswerCode = core.Driver1AnswerCode,
+            Driver2AnswerCode = core.Driver2AnswerCode,
+
+            Driver1AnswerTextAr = core.Driver1AnswerTextAr,
+            Driver2AnswerTextAr = core.Driver2AnswerTextAr,
+
+            MirrorQuestionTextAr = mirror?.QuestionTextAr,
+            MirrorDriver1AnswerTextAr = mirror?.Driver1AnswerTextAr,
+            MirrorDriver2AnswerTextAr = mirror?.Driver2AnswerTextAr,
+
+            IsEvidence = evidenceCodes.Contains(core.QuestionCode)
+        };
+    }).ToList(),
+
 
                 Conflicts = conflicts,
 
                 Party1Images = images
-                    .Where(i => i.DriverUserId == role1UserId)
-                    .Select(i => new InspectorImageItemViewModel
-                    {
-                        ImageId = i.ImageId,
-                        DriverUserId = i.DriverUserId,
-                        Label = i.Label ?? "",
-                        ImagePath = i.ImagePath ?? "",
-                        PredictedLabel = i.PredictedLabel,
-                        PredictionConfidence = i.PredictionConfidence,
-                        PredictionModel = i.PredictionModel,
-                        UploadDate = i.UploadDate
-                    }).ToList(),
+    .Where(i => i.DriverUserId == role1UserId)
+    .Select(i => new InspectorImageItemViewModel
+    {
+        ImageId = i.ImageId,
+        DriverUserId = i.DriverUserId,
+        Label = i.Label ?? "",
+        ImagePath = i.ImagePath ?? "",
+        PredictedLabel = i.PredictedLabel,
+        PredictionConfidence = i.PredictionConfidence,
+        PredictionModel = i.PredictionModel,
+        UploadDate = i.UploadDate,
+
+        SegmentationResultPath = i.SegmentationResultPath,
+        SegmentationHasDamage = i.SegmentationHasDamage,
+        SegmentationModel = i.SegmentationModel,
+        SegmentationDetections = i.ImageSegmentationDetections
+            .Select(d => new InspectorSegmentationDetectionItemViewModel
+            {
+                Label = d.DamageLabel ?? "",
+                Confidence = d.Confidence
+            }).ToList()
+    }).ToList(),
 
                 Party2Images = images
-                    .Where(i => i.DriverUserId == role2UserId)
-                    .Select(i => new InspectorImageItemViewModel
-                    {
-                        ImageId = i.ImageId,
-                        DriverUserId = i.DriverUserId,
-                        Label = i.Label ?? "",
-                        ImagePath = i.ImagePath ?? "",
-                        PredictedLabel = i.PredictedLabel,
-                        PredictionConfidence = i.PredictionConfidence,
-                        PredictionModel = i.PredictionModel,
-                        UploadDate = i.UploadDate
-                    }).ToList()
+    .Where(i => i.DriverUserId == role2UserId)
+    .Select(i => new InspectorImageItemViewModel
+    {
+        ImageId = i.ImageId,
+        DriverUserId = i.DriverUserId,
+        Label = i.Label ?? "",
+        ImagePath = i.ImagePath ?? "",
+        PredictedLabel = i.PredictedLabel,
+        PredictionConfidence = i.PredictionConfidence,
+        PredictionModel = i.PredictionModel,
+        UploadDate = i.UploadDate,
+
+        SegmentationResultPath = i.SegmentationResultPath,
+        SegmentationHasDamage = i.SegmentationHasDamage,
+        SegmentationModel = i.SegmentationModel,
+        SegmentationDetections = i.ImageSegmentationDetections
+            .Select(d => new InspectorSegmentationDetectionItemViewModel
+            {
+                Label = d.DamageLabel ?? "",
+                Confidence = d.Confidence
+            }).ToList()
+    }).ToList(),
             };
 
             return View(vm);
