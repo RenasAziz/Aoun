@@ -14,7 +14,7 @@ public partial class Vehicle
     public int VehicleId { get; set; }
 
     [Column("license_plate")]
-    [StringLength(20)]
+    [StringLength(50)]
     public string LicensePlate { get; set; } = null!;
 
     // Arabic: اجعليها Unicode لدعم العربية

@@ -47,8 +47,10 @@ Each vehicle is linked to a specific driver via DriverUserId.
         [AuthorizeUser]
         public async Task<IActionResult> Index(string searchString)
         {
-            var driver = await _context.Drivers.FirstOrDefaultAsync();
-            int currentUserId = driver.UserId;
+            var currentUserId = HttpContext.Session.GetInt32("UserId");
+
+            if (currentUserId == null)
+                return RedirectToAction("Login", "Auth");
 
             var vehiclesQuery = _context.Vehicles
                 .Where(v => v.DriverUserId == currentUserId);
@@ -57,7 +59,7 @@ Each vehicle is linked to a specific driver via DriverUserId.
             {
                 vehiclesQuery = vehiclesQuery.Where(v =>
                     v.LicensePlate.Contains(searchString) ||
-                    v.Model.Contains(searchString));
+                    (v.Model ?? "").Contains(searchString));
             }
 
             var vehicles = await vehiclesQuery.ToListAsync();
@@ -94,8 +96,12 @@ Each vehicle is linked to a specific driver via DriverUserId.
         {
             if (ModelState.IsValid)
             {
-                var driver = await _context.Drivers.FirstOrDefaultAsync();
-                vehicle.DriverUserId = driver.UserId;
+                var currentUserId = HttpContext.Session.GetInt32("UserId");
+
+                if (currentUserId == null)
+                    return RedirectToAction("Login", "Auth");
+
+                vehicle.DriverUserId = currentUserId.Value;
 
                 _context.Vehicles.Add(vehicle);
                 await _context.SaveChangesAsync();
