@@ -42,6 +42,7 @@ public partial class AounDbContext : DbContext
     public virtual DbSet<QuestionOption> QuestionOptions { get; set; }
     public DbSet<AccidentConflict> AccidentConflicts { get; set; }
     public virtual DbSet<ImageSegmentationDetection> ImageSegmentationDetections { get; set; }
+    public virtual DbSet<Notification> Notifications { get; set; }
 
 
 
@@ -329,6 +330,24 @@ public partial class AounDbContext : DbContext
         modelBuilder.Entity<AccidentConflict>()
             .HasIndex(x => new { x.AccidentId, x.ConflictType })
             .IsUnique();
+
+
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.HasKey(e => e.NotificationId);
+
+            entity.Property(e => e.Title).HasMaxLength(150);
+            entity.Property(e => e.Message).HasMaxLength(500);
+            entity.Property(e => e.Type).HasMaxLength(50);
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+
+            entity.Property(e => e.IsRead).HasDefaultValue(false);
+
+            entity.HasOne(d => d.User)
+                .WithMany()
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
 
     }

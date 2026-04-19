@@ -1,4 +1,5 @@
 ﻿using Aoun.Models;
+using Aoun.Services;
 using Aoun.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,10 +9,12 @@ namespace Aoun.Controllers
     public class InspectorReportsController : Controller
     {
         private readonly AounDbContext _context;
+        private readonly NotificationService _notificationService;
 
-        public InspectorReportsController(AounDbContext context)
+        public InspectorReportsController(AounDbContext context, NotificationService notificationService)
         {
             _context = context;
+            _notificationService = notificationService;
         }
 
         private int? GetCurrentUserId()
@@ -525,6 +528,36 @@ namespace Aoun.Controllers
             report.ReviewedByUserId = GetCurrentUserId();
 
             await _context.SaveChangesAsync();
+
+            var driverUserIds = await _context.AccidentSessionParticipants
+                .Where(p => p.AccidentId == vm.AccidentId)
+                .Select(p => p.DriverUserId)
+                .Distinct()
+                .ToListAsync();
+
+            if (driverUserIds.Count > 0)
+            {
+                if (vm.ApprovalStatus == "مقبول")
+                {
+                    await _notificationService.CreateForUsersAsync(
+                        driverUserIds,
+                        "تم اعتماد التقرير",
+                        "تم اعتماد تقرير الحادث.",
+                        "ReportApproved",
+                        vm.AccidentId
+                    );
+                }
+                else if (vm.ApprovalStatus == "مرفوض")
+                {
+                    await _notificationService.CreateForUsersAsync(
+                        driverUserIds,
+                        "تم رفض التقرير",
+                        "تم رفض التقرير، يرجى مراجعة الملاحظات.",
+                        "ReportRejected",
+                        vm.AccidentId
+                    );
+                }
+            }
 
             TempData["ReviewSuccess"] = "تم تحديث حالة التقرير بنجاح.";
             return RedirectToAction(nameof(Details), new { accidentId = vm.AccidentId });

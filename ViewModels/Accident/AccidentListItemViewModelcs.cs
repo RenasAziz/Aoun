@@ -14,6 +14,6 @@
 
         public string StatusCssClass { get; set; } = "st-pending";
 
-        public string? AccidentType { get; set; }
+        public string AccidentClassification { get; set; } = string.Empty;
     }
 }

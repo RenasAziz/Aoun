@@ -61,7 +61,6 @@ public partial class AccidentReport
 
     [Column("final_confidence_label")]
     [StringLength(50)]
-    [Unicode(false)]
     public string? FinalConfidenceLabel { get; set; }
 
     [Column("decision_explanation")]

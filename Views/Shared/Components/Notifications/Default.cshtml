@@ -1,0 +1,74 @@
+﻿@model List<Aoun.ViewModels.NotificationDropdownItemViewModel>
+
+@{
+    var unreadCount = Model.Count(x => !x.IsRead);
+}
+
+<div class="notif-wrap">
+    <button class="icon-btn bell notif-toggle" id="notifToggle" aria-label="الإشعارات" type="button">
+        <i class="fa-solid fa-bell"></i>
+
+        @if (unreadCount > 0)
+        {
+            <span class="notif-badge" id="notifBadge">@unreadCount</span>
+        }
+    </button>
+
+    <div class="notif-dropdown" id="notifDropdown">
+        <div class="notif-dropdown__header">
+            <span class="notif-dropdown__title">الإشعارات</span>
+        </div>
+
+        @if (Model != null && Model.Any(x => !x.IsRead))
+        {
+            <div class="notif-dropdown__actions">
+                <button type="button"
+                        class="notif-clear-btn"
+                        id="markAllReadBtn"
+                        data-url="@Url.Action("MarkAllAsRead", "Notifications")">
+                    تحديد الكل كمقروء
+                </button>
+            </div>
+        }
+
+        @if (Model != null && Model.Any())
+        {
+            <div class="notif-dropdown__list">
+                @foreach (var item in Model)
+                {
+                    var isRejected = item.Type == "ReportRejected";
+                    var isInspectorNewReport = item.Type == "NewReportForInspector";
+
+                    var iconClass = isRejected ? "fa-file-circle-xmark" : "fa-file-circle-check";
+                    var dangerClass = isRejected ? "notif-item__icon--danger" : "";
+
+                    var notificationUrl = isInspectorNewReport
+                    ? Url.Action("Details", "InspectorReports", new { accidentId = item.ReferenceId })
+                    : Url.Action("Details", "AccidentHistory", new { id = item.ReferenceId });
+
+                    <a href="@notificationUrl"
+                       class="notif-item notif-item--unread"
+                       data-id="@item.NotificationId"
+                       data-mark-read-url="@Url.Action("MarkAsRead", "Notifications")">
+
+                        <div class="notif-item__icon @dangerClass">
+                            <i class="fa-solid @iconClass"></i>
+                        </div>
+
+                        <div class="notif-item__content">
+                            <div class="notif-item__title">@item.Title</div>
+                            <div class="notif-item__text">@item.Message</div>
+                            <div class="notif-item__time">@item.CreatedAt.ToString("dd/MM/yyyy hh:mm tt")</div>
+                        </div>
+                    </a>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="notif-dropdown__empty">
+                لا توجد إشعارات جديدة
+            </div>
+        }
+    </div>
+</div>

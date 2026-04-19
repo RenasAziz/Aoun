@@ -43,10 +43,12 @@ namespace Aoun.Services
     public class LiabilityRuleEngineService
     {
         private readonly AounDbContext _db;
+        private readonly NotificationService _notificationService;
 
-        public LiabilityRuleEngineService(AounDbContext db)
+        public LiabilityRuleEngineService(AounDbContext db, NotificationService notificationService)
         {
             _db = db;
+            _notificationService = notificationService;
         }
 
         // =========================================================
@@ -100,6 +102,8 @@ namespace Aoun.Services
             var report = await _db.AccidentReports
                 .FirstOrDefaultAsync(r => r.AccidentId == accidentId);
 
+            bool isNewReport = report == null;
+
             if (report == null)
             {
                 report = new AccidentReport
@@ -126,6 +130,25 @@ namespace Aoun.Services
             report.DecisionExplanation = result.DecisionExplanation;
 
             await _db.SaveChangesAsync();
+
+            if (isNewReport)
+            {
+                var inspectorIds = await _db.Users
+                    .Where(u => u.Role != null && u.Role.ToLower() == "inspector")
+                    .Select(u => u.UserId)
+                    .ToListAsync();
+
+                if (inspectorIds.Count > 0)
+                {
+                    await _notificationService.CreateForUsersAsync(
+                        inspectorIds,
+                        "تقرير جديد",
+                        $"تم إنشاء تقرير جديد للحادث رقم ACC-{accidentId:000000} وهو بانتظار المراجعة.",
+                        "NewReportForInspector",
+                        accidentId
+                    );
+                }
+            }
         }
 
         // =========================================================
@@ -692,11 +715,7 @@ namespace Aoun.Services
             result.FinalConfidenceScore = finalScore;
             result.FinalConfidenceLabel = ToConfidenceLabel(finalScore);
 
-            result.DecisionExplanation +=
-                $" درجة الثقة الأساسية = {result.BaseConfidenceScore:0.00}، " +
-                $"وخصم التناقضات = {result.ConflictPenaltyScore:0.00}، " +
-                $"وإضافة الأدلة الداعمة = {result.EvidenceBonusScore:0.00}، " +
-                $"لتكون درجة الثقة النهائية = {result.FinalConfidenceScore:0.00} ({result.FinalConfidenceLabel}).";
+           
         }
 
         private decimal GetBaseConfidence(string ruleId)

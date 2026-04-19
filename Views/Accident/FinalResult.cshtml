@@ -263,7 +263,10 @@
     </section>
 
     <div class="fr__actions">
-        <a class="fr__btn fr__btn--primary" href="#">
+        <a asp-action="DownloadPdf"
+           asp-controller="AccidentHistory"
+           asp-route-id="@Model.AccidentId"
+           class="fr__btn fr__btn--primary">
             <i class="fa-solid fa-file-arrow-down"></i>
             تحميل التقرير PDF
         </a>

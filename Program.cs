@@ -1,6 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Aoun.Models;
 using Aoun.Services;
+using QuestPDF.Infrastructure;
+
+QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +15,8 @@ builder.Services.AddScoped<QuestionnaireService>();
 builder.Services.AddScoped<ConflictService>();
 builder.Services.AddScoped<ConflictPackService>();
 builder.Services.AddScoped<LiabilityRuleEngineService>();
+builder.Services.AddScoped<AccidentHistoryPdfService>();
+builder.Services.AddScoped<NotificationService>();
 
 // Add session services.
 builder.Services.AddSession(options =>
