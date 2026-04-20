@@ -258,23 +258,7 @@ namespace Aoun.Services
                 }
             }
 
-            var cq8a = d1.GetValueOrDefault("CQ8");
-            var cq8b = d2.GetValueOrDefault("CQ8");
 
-            if (!string.IsNullOrWhiteSpace(cq8a) && !string.IsNullOrWhiteSpace(cq8b))
-            {
-                if ((cq8a == "CQ8_YES" && cq8b == "CQ8_NO") ||
-                    (cq8a == "CQ8_NO" && cq8b == "CQ8_YES"))
-                {
-                    conflicts.Add(new AccidentConflict
-                    {
-                        AccidentId = accidentId,
-                        ConflictType = ConflictType.IntersectionCompliance,
-                        Severity = ConflictSeverity.High,
-                        Summary = "Intersection compliance contradiction."
-                    });
-                }
-            }
 
             var cq9a = d1.GetValueOrDefault("CQ9");
             var cq9b = d2.GetValueOrDefault("CQ9");
