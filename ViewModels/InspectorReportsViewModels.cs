@@ -105,6 +105,7 @@ namespace Aoun.ViewModels
 
         public InspectorDriverFeedbackViewModel? Party1Feedback { get; set; }
         public InspectorDriverFeedbackViewModel? Party2Feedback { get; set; }
+        public Dictionary<string, string> PackSeverityMap { get; set; } = new();
     }
 
 
@@ -183,6 +184,12 @@ namespace Aoun.ViewModels
         public string? MirrorDriver2AnswerTextAr { get; set; }
 
         public bool IsEvidence { get; set; }
+        public bool Driver1CoreConflict { get; set; }
+        public bool Driver2CoreConflict { get; set; }
+        public bool Driver1MirrorConflict { get; set; }
+        public bool Driver2MirrorConflict { get; set; }
+
+        public string? ConflictHintAr { get; set; }
     }
 
     public class InspectorConflictItemViewModel
@@ -210,7 +217,7 @@ namespace Aoun.ViewModels
         public DateTime? UploadDate { get; set; }
 
         public string PredictionConfidenceText
-            => PredictionConfidence.HasValue ? $"{PredictionConfidence.Value * 100:0.0}%" : "—";
+      => PredictionConfidence.HasValue ? $"{PredictionConfidence.Value:0.00}%" : "—";
         public string? SegmentationResultPath { get; set; }
         public bool? SegmentationHasDamage { get; set; }
         public string? SegmentationModel { get; set; }

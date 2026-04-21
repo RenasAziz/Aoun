@@ -53,6 +53,58 @@
         };
     }
 
+    public string? MapConflictTypeToPackNameForView(string? conflictType)
+    {
+        return (conflictType ?? "").ToLower() switch
+        {
+            "lanechange" => "Pack-LaneChange",
+            "enteringroad" => "Pack-EnteringRoad",
+            "specialmove" => "Pack-SpecialMove",
+            "intersectioncontrol" => "Pack-Intersection",
+            "intersectioncompliance" => "Pack-Intersection",
+            "intersectionentryfirst" => "Pack-Intersection",
+            "position" => "Pack-Position",
+            "overtake" => "Pack-OvertakeVsLeftTurn",
+            _ => null
+        };
+    }
+
+    public string GetSeverityBadgeClass(string? severity)
+    {
+        return (severity ?? "").ToLower() switch
+        {
+            "critical" => "irp__sevBadge irp__sevBadge--critical",
+            "high" => "irp__sevBadge irp__sevBadge--high",
+            "medium" => "irp__sevBadge irp__sevBadge--medium",
+            "low" => "irp__sevBadge irp__sevBadge--low",
+            _ => "irp__sevBadge irp__sevBadge--default"
+        };
+    }
+
+    public string GetSeverityTextClass(string? severity)
+    {
+        return (severity ?? "").ToLower() switch
+        {
+            "critical" => "sev-text--critical",
+            "high" => "sev-text--high",
+            "medium" => "sev-text--medium",
+            "low" => "sev-text--low",
+            _ => "sev-text--default"
+        };
+    }
+
+    public string GetSeverityClass(string? severity)
+    {
+        return (severity ?? "").ToLower() switch
+        {
+            "critical" => "irp__severity--critical",
+            "high" => "irp__severity--high",
+            "medium" => "irp__severity--medium",
+            "low" => "irp__severity--low",
+            _ => "irp__severity--default"
+        };
+    }
+
     public string GetRuleDescription(string? ruleId)
     {
         return (ruleId ?? "").ToUpper() switch
@@ -203,12 +255,6 @@
         };
     }
 
-    public bool HasDifference(Aoun.ViewModels.InspectorAnswerCompareItemViewModel item)
-    {
-        var a = (item.Driver1AnswerCode ?? "").Trim();
-        var b = (item.Driver2AnswerCode ?? "").Trim();
-        return !string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
-    }
 
     public string GetStatusClass(string? status)
     {
@@ -694,129 +740,159 @@
                 <section class="irp__card mt-3">
                     <div class="irp__cardHead">
                         <i class="fa-solid fa-camera"></i>
-                        <h5> صور الضرر</h5>
+                        <h5>صور الضرر</h5>
                     </div>
 
-                    <div class="irp__damageGrid">
-                        @foreach (var img in party1Damage)
+                    <div class="irp__partyDamageStack">
+
+                        @if (party1Damage.Any())
                         {
-                            <div class="irp__damageCard">
-                                <div class="irp__damageTitle">
-                                    <i class="fa-solid fa-image"></i>
-                                    @Model.Party1?.PartyLabel - @GetArabicImageLabel(img.Label)
+                            <div class="irp__partyDamageCard">
+                                <div class="irp__partyDamageHeader">
+                                    <i class="fa-solid fa-user"></i>
+                                    <span>@(Model.Party1?.PartyLabel ?? "الطرف الأول")</span>
                                 </div>
 
-                                <div class="irp__damageImages">
-                                    <div class="irp__damageImageWrap">
-                                        <div class="irp__damageImageLabel">الصورة الأصلية</div>
-                                        <img src="@img.ImagePath"
-                                             class="irp__image js-zoomable"
-                                             alt="@GetArabicImageLabel(img.Label)"
-                                             data-title="@Model.Party1?.PartyLabel - @GetArabicImageLabel(img.Label)"
-                                             data-src="@img.ImagePath" />
-                                    </div>
-
-                                    @if (!string.IsNullOrWhiteSpace(img.SegmentationResultPath))
+                                <div class="irp__partyDamageGrid">
+                                    @foreach (var img in party1Damage)
                                     {
-                                        <div class="irp__damageImageWrap">
-                                            <div class="irp__damageImageLabel">تحديد مناطق الضرر</div>
-                                            <img src="@img.SegmentationResultPath"
-                                                 class="irp__image js-zoomable"
-                                                 alt="تحديد مناطق الضرر"
-                                                 data-title="تحديد مناطق الضرر - @Model.Party1?.PartyLabel"
-                                                 data-src="@img.SegmentationResultPath" />
+                                        <div class="irp__damageItemCard">
+                                            <div class="irp__damageItemTitle">
+                                                <i class="fa-solid fa-image"></i>
+                                                @GetArabicImageLabel(img.Label)
+                                            </div>
+
+                                            <div class="irp__damageImages">
+                                                <div class="irp__damageImageWrap">
+                                                    <div class="irp__damageImageLabel">الصورة الأصلية</div>
+                                                    <img src="@img.ImagePath"
+                                                         class="irp__image js-zoomable"
+                                                         alt="@GetArabicImageLabel(img.Label)"
+                                                         data-title="@Model.Party1?.PartyLabel - @GetArabicImageLabel(img.Label)"
+                                                         data-src="@img.ImagePath" />
+                                                </div>
+
+                                                @if (!string.IsNullOrWhiteSpace(img.SegmentationResultPath))
+                                                {
+                                                    <div class="irp__damageImageWrap">
+                                                        <div class="irp__damageImageLabel">تحديد مناطق الضرر</div>
+                                                        <img src="@img.SegmentationResultPath"
+                                                             class="irp__image js-zoomable"
+                                                             alt="تحديد مناطق الضرر"
+                                                             data-title="تحديد مناطق الضرر - @Model.Party1?.PartyLabel - @GetArabicImageLabel(img.Label)"
+                                                             data-src="@img.SegmentationResultPath" />
+                                                    </div>
+                                                }
+                                            </div>
+
+                                            <div class="irp__damageMeta">
+                                                @if (!string.IsNullOrWhiteSpace(img.PredictedLabel))
+                                                {
+                                                    <div class="irp__imageMeta">تصنيف مكان الضرر: @GetArabicPredictedLabel(img.PredictedLabel)</div>
+                                                }
+
+                                                @if (img.PredictionConfidence.HasValue)
+                                                {
+                                                    <div class="irp__imageMeta">نسبة الثقة في تصنيف مكان الضرر: @img.PredictionConfidenceText</div>
+                                                }
+
+                                                @if (img.SegmentationDetections != null && img.SegmentationDetections.Any())
+                                                {
+                                                    <div class="irp__segDetections">
+                                                        @foreach (var det in img.SegmentationDetections)
+                                                        {
+                                                            <div class="irp__segChip">
+                                                                <span>@GetArabicDamageLabel(det.Label)</span>
+                                                                <strong>@det.Confidence%</strong>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                }
+                                                else if (img.SegmentationHasDamage == false)
+                                                {
+                                                    <div class="irp__segEmpty">لم يتم رصد ضرر واضح في هذه الصورة.</div>
+                                                }
+                                            </div>
                                         </div>
                                     }
                                 </div>
-
-                                @if (!string.IsNullOrWhiteSpace(img.PredictedLabel))
-                                {
-                                    <div class="irp__imageMeta">تصنيف مكان الضرر: @GetArabicPredictedLabel(img.PredictedLabel)</div>
-                                }
-
-                                @if (img.PredictionConfidence.HasValue)
-                                {
-                                    <div class="irp__imageMeta">نسبة الثقة في تصنيف مكان الضرر: @img.PredictionConfidenceText</div>
-                                }
-
-                                @if (img.SegmentationDetections != null && img.SegmentationDetections.Any())
-                                {
-                                    <div class="irp__segDetections">
-                                        @foreach (var det in img.SegmentationDetections)
-                                        {
-                                            <div class="irp__segChip">
-                                                <span>@GetArabicDamageLabel(det.Label)</span>
-                                                <strong>@det.Confidence%</strong>
-                                            </div>
-                                        }
-                                    </div>
-                                }
-                                else if (img.SegmentationHasDamage == false)
-                                {
-                                    <div class="irp__segEmpty">لم يتم رصد ضرر واضح في هذه الصورة.</div>
-                                }
                             </div>
                         }
 
-                        @foreach (var img in party2Damage)
+                        @if (party2Damage.Any())
                         {
-                            <div class="irp__damageCard">
-                                <div class="irp__damageTitle">
-                                    <i class="fa-solid fa-image"></i>
-                                    @Model.Party2?.PartyLabel - @GetArabicImageLabel(img.Label)
+                            <div class="irp__partyDamageCard">
+                                <div class="irp__partyDamageHeader">
+                                    <i class="fa-solid fa-user"></i>
+                                    <span>@(Model.Party2?.PartyLabel ?? "الطرف الثاني")</span>
                                 </div>
 
-                                <div class="irp__damageImages">
-                                    <div class="irp__damageImageWrap">
-                                        <div class="irp__damageImageLabel">الصورة الأصلية</div>
-                                        <img src="@img.ImagePath"
-                                             class="irp__image js-zoomable"
-                                             alt="@GetArabicImageLabel(img.Label)"
-                                             data-title="@Model.Party2?.PartyLabel - @GetArabicImageLabel(img.Label)"
-                                             data-src="@img.ImagePath" />
-                                    </div>
-
-                                    @if (!string.IsNullOrWhiteSpace(img.SegmentationResultPath))
+                                <div class="irp__partyDamageGrid">
+                                    @foreach (var img in party2Damage)
                                     {
-                                        <div class="irp__damageImageWrap">
-                                            <div class="irp__damageImageLabel">تحديد مناطق الضرر</div>
-                                            <img src="@img.SegmentationResultPath"
-                                                 class="irp__image js-zoomable"
-                                                 alt="تحديد مناطق الضرر"
-                                                 data-title="تحديد مناطق الضرر - @Model.Party2?.PartyLabel"
-                                                 data-src="@img.SegmentationResultPath" />
+                                        <div class="irp__damageItemCard">
+                                            <div class="irp__damageItemTitle">
+                                                <i class="fa-solid fa-image"></i>
+                                                @GetArabicImageLabel(img.Label)
+                                            </div>
+
+                                            <div class="irp__damageImages">
+                                                <div class="irp__damageImageWrap">
+                                                    <div class="irp__damageImageLabel">الصورة الأصلية</div>
+                                                    <img src="@img.ImagePath"
+                                                         class="irp__image js-zoomable"
+                                                         alt="@GetArabicImageLabel(img.Label)"
+                                                         data-title="@Model.Party2?.PartyLabel - @GetArabicImageLabel(img.Label)"
+                                                         data-src="@img.ImagePath" />
+                                                </div>
+
+                                                @if (!string.IsNullOrWhiteSpace(img.SegmentationResultPath))
+                                                {
+                                                    <div class="irp__damageImageWrap">
+                                                        <div class="irp__damageImageLabel">تحديد مناطق الضرر</div>
+                                                        <img src="@img.SegmentationResultPath"
+                                                             class="irp__image js-zoomable"
+                                                             alt="تحديد مناطق الضرر"
+                                                             data-title="تحديد مناطق الضرر - @Model.Party2?.PartyLabel - @GetArabicImageLabel(img.Label)"
+                                                             data-src="@img.SegmentationResultPath" />
+                                                    </div>
+                                                }
+                                            </div>
+
+                                            <div class="irp__damageMeta">
+                                                @if (!string.IsNullOrWhiteSpace(img.PredictedLabel))
+                                                {
+                                                    <div class="irp__imageMeta">تصنيف مكان الضرر: @GetArabicPredictedLabel(img.PredictedLabel)</div>
+                                                }
+
+                                                @if (img.PredictionConfidence.HasValue)
+                                                {
+                                                    <div class="irp__imageMeta">نسبة الثقة في تصنيف مكان الضرر: @img.PredictionConfidenceText</div>
+                                                }
+
+                                                @if (img.SegmentationDetections != null && img.SegmentationDetections.Any())
+                                                {
+                                                    <div class="irp__segDetections">
+                                                        @foreach (var det in img.SegmentationDetections)
+                                                        {
+                                                            <div class="irp__segChip">
+                                                                <span>@GetArabicDamageLabel(det.Label)</span>
+                                                                <strong>@det.Confidence%</strong>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                }
+                                                else if (img.SegmentationHasDamage == false)
+                                                {
+                                                    <div class="irp__segEmpty">لم يتم رصد ضرر واضح في هذه الصورة.</div>
+                                                }
+                                            </div>
                                         </div>
                                     }
                                 </div>
-
-                                @if (!string.IsNullOrWhiteSpace(img.PredictedLabel))
-                                {
-                                    <div class="irp__imageMeta">تصنيف مكان الضرر: @GetArabicPredictedLabel(img.PredictedLabel)</div>
-                                }
-
-                                @if (img.PredictionConfidence.HasValue)
-                                {
-                                    <div class="irp__imageMeta">نسبة الثقة في تصنيف مكان الضرر: @img.PredictionConfidenceText</div>
-                                }
-
-                                @if (img.SegmentationDetections != null && img.SegmentationDetections.Any())
-                                {
-                                    <div class="irp__segDetections">
-                                        @foreach (var det in img.SegmentationDetections)
-                                        {
-                                            <div class="irp__segChip">
-                                                <span>@GetArabicDamageLabel(det.Label)</span>
-                                                <strong>@det.Confidence%</strong>
-                                            </div>
-                                        }
-                                    </div>
-                                }
-                                else if (img.SegmentationHasDamage == false)
-                                {
-                                    <div class="irp__segEmpty">لم يتم رصد ضرر واضح في هذه الصورة.</div>
-                                }
                             </div>
                         }
+
                     </div>
                 </section>
             }
@@ -860,22 +936,26 @@
                     <div class="irp__qaStack">
                         @foreach (var item in Model.CoreAnswers)
                         {
-                            var different = HasDifference(item);
+                            var hasConflict =
+                            item.Driver1CoreConflict ||
+                            item.Driver2CoreConflict ||
+                            item.Driver1MirrorConflict ||
+                            item.Driver2MirrorConflict;
 
-                            <div class="irp__qaItem @(item.IsEvidence ? "irp__qaItem--evidence" : "")">
+                            <div class="irp__qaItem @(item.IsEvidence ? "irp__qaItem--evidence" : "") @(hasConflict ? "irp__qaItem--conflict" : "")">
 
                                 <div class="irp__qaHeader">
                                     <i class="fa-solid fa-circle-question"></i>
                                     @item.QuestionTextAr
                                 </div>
 
-                                <div class="irp__qaAnswers @(different ? "irp__qaAnswers--diff" : "")">
-                                    <div>
+                                <div class="irp__qaAnswers">
+                                    <div class="irp__qaAnswerBox @(item.Driver1CoreConflict ? "irp__qaAnswerBox--conflict" : "")">
                                         <div class="irp__qaLabel">الطرف الأول</div>
                                         <div class="irp__qaValue">@item.Driver1AnswerTextAr</div>
                                     </div>
 
-                                    <div>
+                                    <div class="irp__qaAnswerBox @(item.Driver2CoreConflict ? "irp__qaAnswerBox--conflict" : "")">
                                         <div class="irp__qaLabel">الطرف الثاني</div>
                                         <div class="irp__qaValue">@item.Driver2AnswerTextAr</div>
                                     </div>
@@ -890,12 +970,12 @@
                                         </div>
 
                                         <div class="irp__qaAnswers">
-                                            <div>
+                                            <div class="irp__qaAnswerBox @(item.Driver1MirrorConflict ? "irp__qaAnswerBox--conflict" : "")">
                                                 <div class="irp__qaLabel">الطرف الأول</div>
                                                 <div class="irp__qaValue">@item.MirrorDriver1AnswerTextAr</div>
                                             </div>
 
-                                            <div>
+                                            <div class="irp__qaAnswerBox @(item.Driver2MirrorConflict ? "irp__qaAnswerBox--conflict" : "")">
                                                 <div class="irp__qaLabel">الطرف الثاني</div>
                                                 <div class="irp__qaValue">@item.MirrorDriver2AnswerTextAr</div>
                                             </div>
@@ -903,6 +983,13 @@
                                     </div>
                                 }
 
+                                @if (!string.IsNullOrWhiteSpace(item.ConflictHintAr))
+                                {
+                                    <div class="irp__conflictHint">
+                                        <i class="fa-solid fa-triangle-exclamation"></i>
+                                        @item.ConflictHintAr
+                                    </div>
+                                }
                             </div>
                         }
                     </div>
@@ -915,78 +1002,122 @@
 
         </div>
 
-        @if (hasExtraTab)
-        {
-            <div class="tab-pane fade" id="tab-extra">
-                @if (Model.ConflictBackAnswers.Any())
-                {
-                    <section class="irp__card">
-                        <div class="irp__cardHead">
-                            <i class="fa-solid fa-diagram-project"></i>
-                            <h5>أسئلة الحزم الإضافية</h5>
-                        </div>
-
-                        <div class="table-responsive">
-                            <table class="table irp__table align-middle">
-                                <thead>
-                                    <tr>
-                                        <th>الحزمة</th>
-                                        <th>السؤال</th>
-                                        <th>إجابة الطرف الأول</th>
-                                        <th>إجابة الطرف الثاني</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var item in Model.ConflictBackAnswers)
-                                    {
-                                        var different = HasDifference(item);
-
-                                        <tr class="@(different ? "irp__rowDiff" : "")">
-                                            <td>@GetArabicPackName(item.PackName)</td>
-                                            <td class="fw-semibold">@item.QuestionTextAr</td>
-                                            <td>@item.Driver1AnswerTextAr</td>
-                                            <td>@item.Driver2AnswerTextAr</td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    </section>
-                }
-
-                @if (Model.Conflicts.Any())
-                {
-                    <section class="irp__card @(Model.ConflictBackAnswers.Any() ? "mt-3" : "")">
-                        <div class="irp__cardHead">
-                            <i class="fa-solid fa-triangle-exclamation"></i>
-                            <h5>التناقضات المكتشفة</h5>
-                        </div>
-
-                        <div class="table-responsive">
-                            <table class="table irp__table align-middle">
-                                <thead>
-                                    <tr>
-                                        <th>النوع</th>
-                                        <th>الحدة</th>
-                                        <th>الملخص</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var item in Model.Conflicts)
-                                    {
-                                        <tr>
-                                            <td>@GetArabicConflictType(item.ConflictType)</td>
-                                            <td>@GetArabicSeverity(item.Severity)</td>
-                                            <td>@GetArabicConflictSummary(item.Summary)</td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    </section>
-                }
+       @if (hasExtraTab)
+{
+    <div class="tab-pane fade" id="tab-extra">
+        <section class="irp__card">
+            <div class="irp__cardHead">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <h5>تحليل التناقضات</h5>
             </div>
-        }
+
+            @if (Model.Conflicts.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table irp__table irp__expandTable align-middle">
+                        <thead>
+                            <tr>
+                                <th style="width: 22%;">النوع</th>
+                                <th style="width: 14%;">الحدة</th>
+                                <th>الملخص</th>
+                                <th style="width: 70px;">التفاصيل</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Model.Conflicts.Count; i++)
+                            {
+                                var item = Model.Conflicts[i];
+                                var packName = MapConflictTypeToPackNameForView(item.ConflictType);
+
+                                var packAnswers = Model.ConflictBackAnswers
+                                    .Where(x => !string.IsNullOrWhiteSpace(x.PackName) &&
+                                                string.Equals(x.PackName, packName, StringComparison.OrdinalIgnoreCase))
+                                    .ToList();
+
+                                var collapseId = $"conflictRow_{i}";
+
+                                <tr class="irp__mainRow">
+                                    <td class="fw-bold">@GetArabicConflictType(item.ConflictType)</td>
+                                    <td>
+                                        <span class="@GetSeverityBadgeClass(item.Severity)">
+                                            @GetArabicSeverity(item.Severity)
+                                        </span>
+                                    </td>
+                                    <td>@GetArabicConflictSummary(item.Summary)</td>
+                                    <td class="text-center">
+                                        <button class="irp__rowToggle"
+                                                type="button"
+                                                data-bs-toggle="collapse"
+                                                data-bs-target="#@collapseId"
+                                                aria-expanded="false"
+                                                aria-controls="@collapseId">
+                                            <i class="fa-solid fa-chevron-down"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <tr class="collapse irp__detailsRow" id="@collapseId">
+                                    <td colspan="4">
+                                        <div class="irp__detailsWrap">
+                                            @if (!string.IsNullOrWhiteSpace(packName))
+                                            {
+                                                <div class="irp__packInlineHeader">
+                                                    <span class="irp__packInlineLabel">الحزمة المرتبطة:</span>
+                                                    <span class="irp__packInlineName">@GetArabicPackName(packName)</span>
+                                                </div>
+                                            }
+
+                                            @if (packAnswers.Any())
+                                            {
+                                                <div class="table-responsive">
+                                                    <table class="table irp__nestedTable align-middle">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>السؤال</th>
+                                                                <th>إجابة الطرف الأول</th>
+                                                                <th>إجابة الطرف الثاني</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @foreach (var answer in packAnswers)
+                                                            {
+                                                                <tr>
+                                                                    <td class="fw-semibold">@answer.QuestionTextAr</td>
+                                                                    <td>@answer.Driver1AnswerTextAr</td>
+                                                                    <td>@answer.Driver2AnswerTextAr</td>
+                                                                </tr>
+                                                            }
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="irp__mutedNote">
+                                                    لا توجد أسئلة حزمة إضافية مرتبطة بهذا التناقض.
+                                                </div>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else if (Model.ConflictBackAnswers.Any())
+            {
+                <div class="irp__mutedNote">
+                    لا توجد تعارضات نشطة حاليًا، لكن توجد إجابات حزم محفوظة.
+                </div>
+            }
+            else
+            {
+                <div class="irp__empty">لا توجد بيانات.</div>
+            }
+        </section>
+    </div>
+}
 
     </div>
 </div>

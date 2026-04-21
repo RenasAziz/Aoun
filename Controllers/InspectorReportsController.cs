@@ -65,6 +65,73 @@ namespace Aoun.Controllers
             };
         }
 
+        private static bool IsYesNoConflict(string? a, string? b)
+        {
+            return (a == "CQ2_YES" && b == "M2_NO") ||
+                   (a == "CQ2_NO" && b == "M2_YES") ||
+                   (a == "CQ10_YES" && b == "M5_NO") ||
+                   (a == "CQ10_NO" && b == "M5_YES");
+        }
+
+        private static bool IsLaneChangeConflict(string? cq1, string? m1)
+        {
+            bool? claim = cq1 switch
+            {
+                "CQ1_LEFT" => true,
+                "CQ1_RIGHT" => true,
+                "CQ1_NO" => false,
+                _ => null
+            };
+
+            bool? obs = m1 switch
+            {
+                "M1_YES" => true,
+                "M1_NO" => false,
+                _ => null
+            };
+
+            return claim.HasValue && obs.HasValue && claim.Value != obs.Value;
+        }
+
+        private static bool IsSpecialMoveConflict(string? cq3, string? m3)
+        {
+            bool? claim = cq3 switch
+            {
+                "CQ3_REVERSING" => true,
+                "CQ3_UTURN" => true,
+                "CQ3_NORMAL" => false,
+                "CQ3_SLOW" => false,
+                _ => null
+            };
+
+            bool? obs = m3 switch
+            {
+                "M3_YES" => true,
+                "M3_NO" => false,
+                _ => null
+            };
+
+            return claim.HasValue && obs.HasValue && claim.Value != obs.Value;
+        }
+
+        private static bool IsIntersectionControlConflict(string? d1Code, string? d2Code)
+        {
+            return (d1Code == "CQ7_LIGHT" && d2Code == "CQ7_NONE") ||
+                   (d1Code == "CQ7_NONE" && d2Code == "CQ7_LIGHT");
+        }
+
+        private static bool IsPositionConflict(string? d1Code, string? d2Code)
+        {
+            return (d1Code == "CQ5_BEHIND" && d2Code == "CQ5_BEHIND") ||
+                   (d1Code == "CQ5_AHEAD" && d2Code == "CQ5_AHEAD");
+        }
+
+        private static bool IsIntersectionEntryFirstConflict(string? d1Code, string? d2Code)
+        {
+            return (d1Code == "CQ9_ME" && d2Code == "CQ9_ME") ||
+                   (d1Code == "CQ9_OTHER" && d2Code == "CQ9_OTHER");
+        }
+
         public async Task<IActionResult> Index(string? search, string? statusFilter)
         {
             if (!await CurrentUserIsInspectorAsync())
@@ -315,6 +382,57 @@ namespace Aoun.Controllers
             var role1UserId = participants.FirstOrDefault(p => p.Role == 1)?.DriverUserId ?? 0;
             var role2UserId = participants.FirstOrDefault(p => p.Role == 2)?.DriverUserId ?? 0;
 
+            var cq6Driver1Code = role1UserId > 0 ? GetAnswerCode("CQ6", role1UserId) : "—";
+            var cq6Driver2Code = role2UserId > 0 ? GetAnswerCode("CQ6", role2UserId) : "—";
+
+            bool intersectionActive =
+                string.Equals(cq6Driver1Code, "CQ6_YES", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(cq6Driver2Code, "CQ6_YES", StringComparison.OrdinalIgnoreCase);
+
+            bool hasIntersectionDetailAnswers =
+                (role1UserId > 0 && (
+                    GetAnswerCode("CQ7", role1UserId) != "—" ||
+                    GetAnswerCode("CQ8", role1UserId) != "—" ||
+                    GetAnswerCode("CQ9", role1UserId) != "—" ||
+                    GetAnswerCode("M4", role1UserId) != "—")) ||
+                (role2UserId > 0 && (
+                    GetAnswerCode("CQ7", role2UserId) != "—" ||
+                    GetAnswerCode("CQ8", role2UserId) != "—" ||
+                    GetAnswerCode("CQ9", role2UserId) != "—" ||
+                    GetAnswerCode("M4", role2UserId) != "—"));
+
+            var cq10Driver1Code = role1UserId > 0 ? GetAnswerCode("CQ10", role1UserId) : "—";
+            var cq10Driver2Code = role2UserId > 0 ? GetAnswerCode("CQ10", role2UserId) : "—";
+
+            bool overtakeActive =
+                string.Equals(cq10Driver1Code, "CQ10_YES", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(cq10Driver2Code, "CQ10_YES", StringComparison.OrdinalIgnoreCase);
+
+            bool hasOvertakeMirrorAnswers =
+                (role1UserId > 0 && GetAnswerCode("M5", role1UserId) != "—") ||
+                (role2UserId > 0 && GetAnswerCode("M5", role2UserId) != "—");
+
+            bool ShouldDisplayQuestion(string? questionCode)
+            {
+                if (string.IsNullOrWhiteSpace(questionCode))
+                    return false;
+
+                if (questionCode.Equals("CQ7", StringComparison.OrdinalIgnoreCase) ||
+                    questionCode.Equals("CQ8", StringComparison.OrdinalIgnoreCase) ||
+                    questionCode.Equals("CQ9", StringComparison.OrdinalIgnoreCase) ||
+                    questionCode.Equals("M4", StringComparison.OrdinalIgnoreCase))
+                {
+                    return intersectionActive || hasIntersectionDetailAnswers;
+                }
+
+                if (questionCode.Equals("M5", StringComparison.OrdinalIgnoreCase))
+                {
+                    return overtakeActive || hasOvertakeMirrorAnswers;
+                }
+
+                return true;
+            }
+
             InspectorDriverFeedbackViewModel? BuildFeedback(int driverUserId)
             {
                 if (driverUserId <= 0) return null;
@@ -332,6 +450,7 @@ namespace Aoun.Controllers
             }
 
             var allAnswers = questionMeta
+               .Where(q => ShouldDisplayQuestion(q.QuestionCode))
                .Select(q => new InspectorAnswerCompareItemViewModel
                {
                    QuestionCode = q.QuestionCode ?? "",
@@ -350,6 +469,8 @@ namespace Aoun.Controllers
                })
                .ToList();
 
+         
+
             var conflicts = await _context.AccidentConflicts
                 .AsNoTracking()
                 .Where(c => c.AccidentId == accidentId)
@@ -365,6 +486,39 @@ namespace Aoun.Controllers
                 })
                 .ToListAsync();
 
+
+            var packSeverityMap = conflicts
+    .Where(c => Enum.TryParse<ConflictType>(c.ConflictType, out _))
+    .Select(c =>
+    {
+        Enum.TryParse<ConflictType>(c.ConflictType, out var parsedType);
+        var packName = MapConflictTypeToPackName(parsedType);
+        return new
+        {
+            PackName = packName,
+            Severity = c.Severity
+        };
+    })
+    .Where(x => !string.IsNullOrWhiteSpace(x.PackName))
+    .GroupBy(x => x.PackName!)
+    .ToDictionary(
+        g => g.Key,
+        g =>
+        {
+            if (g.Any(x => string.Equals(x.Severity, "Critical", StringComparison.OrdinalIgnoreCase)))
+                return "Critical";
+
+            if (g.Any(x => string.Equals(x.Severity, "High", StringComparison.OrdinalIgnoreCase)))
+                return "High";
+
+            if (g.Any(x => string.Equals(x.Severity, "Medium", StringComparison.OrdinalIgnoreCase)))
+                return "Medium";
+
+            return "Low";
+        },
+        StringComparer.OrdinalIgnoreCase
+    );
+
             var relevantPackNames = conflicts
     .Select(c =>
     {
@@ -376,6 +530,15 @@ namespace Aoun.Controllers
     .Where(x => !string.IsNullOrWhiteSpace(x))
     .Distinct()
     .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var conflictBackAnswers = allAnswers
+             .Where(a =>
+                 a.QuestionType == "ConflictBack" &&
+                 !string.IsNullOrWhiteSpace(a.PackName) &&
+                 relevantPackNames.Contains(a.PackName))
+             .OrderBy(a => a.PackName)
+             .ThenBy(a => a.QuestionCode)
+             .ToList();
 
             var images = await _context.Images
                 .AsNoTracking()
@@ -413,6 +576,8 @@ namespace Aoun.Controllers
                 FinalConfidenceScore = report.FinalConfidenceScore ?? 0,
                 FinalConfidenceLabel = report.FinalConfidenceLabel ?? "—",
                 DecisionExplanation = report.DecisionExplanation ?? "—",
+                ConflictBackAnswers = conflictBackAnswers,
+                PackSeverityMap = packSeverityMap,
 
                 Party1 = BuildParty(1),
                 Party2 = BuildParty(2),
@@ -429,7 +594,7 @@ namespace Aoun.Controllers
             m.QuestionType == "Mirror" &&
             IsMirrorMatch(core.QuestionCode, m.QuestionCode));
 
-        return new InspectorAnswerCompareItemViewModel
+        var item = new InspectorAnswerCompareItemViewModel
         {
             QuestionCode = core.QuestionCode,
             QuestionTextAr = core.QuestionTextAr,
@@ -446,6 +611,123 @@ namespace Aoun.Controllers
 
             IsEvidence = evidenceCodes.Contains(core.QuestionCode)
         };
+
+        switch (core.QuestionCode)
+        {
+            case "CQ1":
+                item.Driver1CoreConflict = IsLaneChangeConflict(core.Driver1AnswerCode, mirror?.Driver2AnswerCode);
+                item.Driver2MirrorConflict = IsLaneChangeConflict(core.Driver1AnswerCode, mirror?.Driver2AnswerCode);
+
+                item.Driver2CoreConflict = IsLaneChangeConflict(core.Driver2AnswerCode, mirror?.Driver1AnswerCode);
+                item.Driver1MirrorConflict = IsLaneChangeConflict(core.Driver2AnswerCode, mirror?.Driver1AnswerCode);
+
+                if (item.Driver1CoreConflict || item.Driver2CoreConflict ||
+                    item.Driver1MirrorConflict || item.Driver2MirrorConflict)
+                {
+                    item.ConflictHintAr = "يوجد تناقض بين إجابة السائق عن نفسه وإجابة الطرف الآخر عنه.";
+                }
+                break;
+
+            case "CQ2":
+                item.Driver1CoreConflict =
+                    (core.Driver1AnswerCode == "CQ2_YES" && mirror?.Driver2AnswerCode == "M2_NO") ||
+                    (core.Driver1AnswerCode == "CQ2_NO" && mirror?.Driver2AnswerCode == "M2_YES");
+                item.Driver2MirrorConflict = item.Driver1CoreConflict;
+
+                item.Driver2CoreConflict =
+                    (core.Driver2AnswerCode == "CQ2_YES" && mirror?.Driver1AnswerCode == "M2_NO") ||
+                    (core.Driver2AnswerCode == "CQ2_NO" && mirror?.Driver1AnswerCode == "M2_YES");
+                item.Driver1MirrorConflict = item.Driver2CoreConflict;
+
+                if (item.Driver1CoreConflict || item.Driver2CoreConflict ||
+                    item.Driver1MirrorConflict || item.Driver2MirrorConflict)
+                {
+                    item.ConflictHintAr = "يوجد تناقض بين الادعاء بالدخول للطريق الرئيسي وملاحظة الطرف الآخر.";
+                }
+                break;
+
+            case "CQ3":
+                item.Driver1CoreConflict = IsSpecialMoveConflict(core.Driver1AnswerCode, mirror?.Driver2AnswerCode);
+                item.Driver2MirrorConflict = IsSpecialMoveConflict(core.Driver1AnswerCode, mirror?.Driver2AnswerCode);
+
+                item.Driver2CoreConflict = IsSpecialMoveConflict(core.Driver2AnswerCode, mirror?.Driver1AnswerCode);
+                item.Driver1MirrorConflict = IsSpecialMoveConflict(core.Driver2AnswerCode, mirror?.Driver1AnswerCode);
+
+                if (item.Driver1CoreConflict || item.Driver2CoreConflict ||
+                    item.Driver1MirrorConflict || item.Driver2MirrorConflict)
+                {
+                    item.ConflictHintAr = "يوجد تناقض بخصوص الحركة الخاصة قبل الاصطدام.";
+                }
+                break;
+
+            case "CQ5":
+                item.Driver1CoreConflict = IsPositionConflict(core.Driver1AnswerCode, core.Driver2AnswerCode);
+                item.Driver2CoreConflict = IsPositionConflict(core.Driver1AnswerCode, core.Driver2AnswerCode);
+
+                if (item.Driver1CoreConflict || item.Driver2CoreConflict)
+                {
+                    item.ConflictHintAr = "الطرفان قدّما تموضعًا نسبيًا غير منطقي.";
+                }
+                break;
+
+            case "CQ6":
+                item.Driver1CoreConflict =
+                    (core.Driver1AnswerCode == "CQ6_YES" && mirror?.Driver2AnswerCode == "M4_NO") ||
+                    (core.Driver1AnswerCode == "CQ6_NO" && mirror?.Driver2AnswerCode == "M4_YES");
+                item.Driver2MirrorConflict = item.Driver1CoreConflict;
+
+                item.Driver2CoreConflict =
+                    (core.Driver2AnswerCode == "CQ6_YES" && mirror?.Driver1AnswerCode == "M4_NO") ||
+                    (core.Driver2AnswerCode == "CQ6_NO" && mirror?.Driver1AnswerCode == "M4_YES");
+                item.Driver1MirrorConflict = item.Driver2CoreConflict;
+
+                if (item.Driver1CoreConflict || item.Driver2CoreConflict ||
+                    item.Driver1MirrorConflict || item.Driver2MirrorConflict)
+                {
+                    item.ConflictHintAr = "يوجد تناقض بين تحديد وقوع الحادث عند تقاطع وملاحظة الطرف الآخر.";
+                }
+                break;
+
+            case "CQ7":
+                item.Driver1CoreConflict = IsIntersectionControlConflict(core.Driver1AnswerCode, core.Driver2AnswerCode);
+                item.Driver2CoreConflict = IsIntersectionControlConflict(core.Driver1AnswerCode, core.Driver2AnswerCode);
+
+                if (item.Driver1CoreConflict || item.Driver2CoreConflict)
+                {
+                    item.ConflictHintAr = "يوجد اختلاف جوهري في وصف تنظيم التقاطع.";
+                }
+                break;
+
+            case "CQ9":
+                item.Driver1CoreConflict = IsIntersectionEntryFirstConflict(core.Driver1AnswerCode, core.Driver2AnswerCode);
+                item.Driver2CoreConflict = IsIntersectionEntryFirstConflict(core.Driver1AnswerCode, core.Driver2AnswerCode);
+
+                if (item.Driver1CoreConflict || item.Driver2CoreConflict)
+                {
+                    item.ConflictHintAr = "كلا الطرفين يدّعي أولوية دخول غير منطقية.";
+                }
+                break;
+
+            case "CQ10":
+                item.Driver1CoreConflict =
+                    (core.Driver1AnswerCode == "CQ10_YES" && mirror?.Driver2AnswerCode == "M5_NO") ||
+                    (core.Driver1AnswerCode == "CQ10_NO" && mirror?.Driver2AnswerCode == "M5_YES");
+                item.Driver2MirrorConflict = item.Driver1CoreConflict;
+
+                item.Driver2CoreConflict =
+                    (core.Driver2AnswerCode == "CQ10_YES" && mirror?.Driver1AnswerCode == "M5_NO") ||
+                    (core.Driver2AnswerCode == "CQ10_NO" && mirror?.Driver1AnswerCode == "M5_YES");
+                item.Driver1MirrorConflict = item.Driver2CoreConflict;
+
+                if (item.Driver1CoreConflict || item.Driver2CoreConflict ||
+                    item.Driver1MirrorConflict || item.Driver2MirrorConflict)
+                {
+                    item.ConflictHintAr = "يوجد تناقض بين ادعاء التجاوز وملاحظة الطرف الآخر.";
+                }
+                break;
+        }
+
+        return item;
     }).ToList(),
 
 

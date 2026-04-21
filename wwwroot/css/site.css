@@ -5862,3 +5862,458 @@ i[class^="fa"], i[class*=" fa"],
 }
 
 
+.irp__packBlock {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e9ecef;
+}
+
+    .irp__packBlock:first-of-type {
+        margin-top: 0;
+        padding-top: 0;
+        border-top: 0;
+    }
+
+.irp__sectionMiniTitle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #1f2937;
+    margin-bottom: 12px;
+}
+
+.irp__table th {
+    white-space: nowrap;
+    font-weight: 700;
+}
+
+.irp__table td {
+    vertical-align: middle;
+}
+
+.irp__rowDiff td {
+    background-color: #fff8e1;
+}
+
+.irp__table tbody tr:hover td {
+    background-color: #f8fafc;
+    transition: background-color 0.2s ease;
+}
+
+.irp__qaAnswers {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.irp__qaAnswerBox {
+    padding: 14px 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: #fff;
+    transition: 0.2s ease;
+}
+
+.irp__qaAnswerBox--conflict {
+    background: #fff8db;
+    border-color: #f4c542;
+    box-shadow: 0 0 0 2px rgba(244, 197, 66, 0.18);
+}
+
+.irp__qaItem--conflict .irp__qaHeader {
+    color: #8a6d00;
+}
+
+.irp__conflictHint {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: #fff8db;
+    border: 1px solid #f4c542;
+    color: #6b5500;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.irp__qaMirror {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed #e5e7eb;
+}
+
+.irp__partyDamageStack {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.irp__partyDamageCard {
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    background: #f9fbfa;
+    padding: 18px;
+}
+
+.irp__partyDamageHeader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #0f5132;
+}
+
+.irp__partyDamageGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 18px;
+}
+
+.irp__damageItemCard {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 16px;
+    height: 100%;
+}
+
+.irp__damageItemTitle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 12px;
+}
+
+.irp__damageMeta {
+    margin-top: 12px;
+}
+
+.irp__damageImages {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.irp__damageImageWrap {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 12px;
+}
+
+.irp__damageImageLabel {
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: #475569;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .irp__damageImages {
+        grid-template-columns: 1fr;
+    }
+
+    .irp__partyDamageGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.irp__severity--critical {
+    background: #fee2e2;
+    border: 1px solid #ef4444;
+    color: #7f1d1d;
+}
+
+.irp__severity--high {
+    background: #ffedd5;
+    border: 1px solid #f97316;
+    color: #9a3412;
+}
+
+.irp__severity--medium {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    color: #92400e;
+}
+
+.irp__severity--low {
+    background: #dcfce7;
+    border: 1px solid #22c55e;
+    color: #166534;
+}
+
+.irp__severity--default {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+}
+
+/* Critical - أحمر قوي */
+.sev-text--critical {
+    color: #dc2626;
+    font-weight: 700;
+}
+
+/* High - برتقالي */
+.sev-text--high {
+    color: #ea580c;
+    font-weight: 600;
+}
+
+/* Medium - أصفر غامق */
+.sev-text--medium {
+    color: #ca8a04;
+    font-weight: 600;
+}
+
+/* Low - أخضر */
+.sev-text--low {
+    color: #16a34a;
+    font-weight: 600;
+}
+
+/* Default */
+.sev-text--default {
+    color: #475569;
+}
+
+.irp__conflictAccordion {
+    margin-top: 8px;
+}
+
+.irp__conflictItem {
+    border: 1px solid #e5e7eb;
+    border-radius: 18px !important;
+    overflow: hidden;
+    margin-bottom: 14px;
+    background: #fff;
+}
+
+.irp__conflictToggle {
+    background: #fff !important;
+    box-shadow: none !important;
+    padding: 18px 20px;
+}
+
+    .irp__conflictToggle:not(.collapsed) {
+        background: #fcfcfc !important;
+    }
+
+    .irp__conflictToggle::after {
+        margin-right: auto;
+        margin-left: 0;
+    }
+
+.irp__conflictTop {
+    width: 100%;
+}
+
+.irp__conflictMain {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.irp__conflictTitleLine {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.irp__conflictType {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.irp__conflictSummary {
+    color: #334155;
+    line-height: 1.8;
+    font-size: 1rem;
+}
+
+.irp__conflictBody {
+    padding-top: 0;
+}
+
+.irp__conflictPackName {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    color: #334155;
+    font-weight: 700;
+}
+
+.irp__sevBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.92rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.irp__sevBadge--critical {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.irp__sevBadge--high {
+    background: #ffedd5;
+    color: #c2410c;
+}
+
+.irp__sevBadge--medium {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.irp__sevBadge--low {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.irp__sevBadge--default {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+.irp__expandTable > thead > tr > th {
+    white-space: nowrap;
+    font-weight: 800;
+    color: #0f172a;
+    border-bottom: 2px solid #dbe3dd;
+}
+
+.irp__mainRow td {
+    vertical-align: middle;
+    background: #fff;
+}
+
+.irp__mainRow:hover td {
+    background: #fafcfb;
+}
+
+.irp__rowToggle {
+    width: 38px;
+    height: 38px;
+    border: 1px solid #d7e0d9;
+    background: #fff;
+    border-radius: 10px;
+    color: #334155;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s ease;
+}
+
+    .irp__rowToggle:hover {
+        background: #f8fafc;
+        border-color: #bfcfc3;
+    }
+
+.irp__detailsRow > td {
+    padding: 0 !important;
+    background: #fcfcfc;
+    border-top: 0;
+}
+
+.irp__detailsWrap {
+    padding: 18px 20px 20px;
+    border-top: 1px dashed #d9e2db;
+    background: #fcfcfc;
+}
+
+.irp__packInlineHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.irp__packInlineLabel {
+    color: #64748b;
+    font-weight: 700;
+}
+
+.irp__packInlineName {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: #eef6f0;
+    color: #14532d;
+    font-weight: 800;
+}
+
+.irp__nestedTable {
+    margin-bottom: 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+    .irp__nestedTable thead th {
+        background: #f8fafc;
+        font-weight: 800;
+        color: #0f172a;
+        white-space: nowrap;
+    }
+
+    .irp__nestedTable td {
+        background: #fff;
+        vertical-align: middle;
+    }
+
+.irp__sevBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.92rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.irp__sevBadge--critical {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.irp__sevBadge--high {
+    background: #ffedd5;
+    color: #c2410c;
+}
+
+.irp__sevBadge--medium {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.irp__sevBadge--low {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.irp__sevBadge--default {
+    background: #e2e8f0;
+    color: #475569;
+}
