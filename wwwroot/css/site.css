@@ -6317,3 +6317,51 @@ i[class^="fa"], i[class*=" fa"],
     background: #e2e8f0;
     color: #475569;
 }
+
+
+.fr__statusBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 700;
+    background: #f3f4f6;
+    color: #333;
+}
+
+
+.fr__reviewBox {
+    margin-top: 10px;
+    background: #f7faf8;
+    border: 1px solid #dfe7e2;
+    border-radius: 24px;
+    padding: 24px 22px;
+}
+
+.fr__reviewStatus {
+    font-size: 1.10rem;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 14px;
+}
+
+.fr__reviewStatus--accepted {
+    color: #1f7a45;
+}
+
+.fr__reviewStatus--pending {
+    color: #a56a00;
+}
+
+.fr__reviewStatus--rejected {
+    color: #b42318;
+}
+
+.fr__reviewNote {
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 2;
+    color: #0f2233;
+}

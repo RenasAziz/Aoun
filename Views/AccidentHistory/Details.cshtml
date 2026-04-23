@@ -48,20 +48,7 @@
 
     </div>
 
-    @if (Model.HasConflicts)
-    {
-        <div class="fr__alert">
-            <div class="fr__alertIcon">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-            </div>
-            <div class="fr__alertContent">
-                <div class="fr__alertTitle">تم رصد تناقض بين إجابات الطرفين</div>
-                <div class="fr__alertText">
-                    قد يؤثر هذا التناقض على دقة التقييم الأولي، وسيتواصل معكم محقق الحوادث للتأكد من صحة المعلومات.
-                </div>
-            </div>
-        </div>
-    }
+
 
     <section class="fr__card">
         <div class="fr__cardHead">
@@ -74,7 +61,12 @@
             </div>
         </div>
 
+
         <div class="fr__metaGrid">
+
+
+        
+
             <div class="fr__metaItem">
                 <div class="fr__metaLabel">
                     <i class="fa-regular fa-calendar"></i>
@@ -104,66 +96,32 @@
     <section class="fr__card">
         <div class="fr__sectionHead">
             <div class="fr__sectionIcon">
-                <i class="fa-solid fa-scale-balanced"></i>
-            </div>
-            <h3 class="fr__sectionTitle">نوع الحادث والنتيجة</h3>
-        </div>
-
-        <div class="fr__resultBox">
-            <div class="fr__resultLabel">نوع الحادث المحدد</div>
-            <div class="fr__resultValue">@Model.AccidentClassification</div>
-            <div class="fr__badge">
-                <i class="fa-solid fa-shield-heart"></i>
-                مستوى الثقة: @Model.ConfidencePercentText
-            </div>
-        </div>
-
-        <div class="fr__splitTitle">نسبة الخطأ المقترحة</div>
-
-        <div class="fr__faultList">
-            <div class="fr__faultItem">
-                <div class="fr__faultSide">
-                    <i class="fa-solid fa-user"></i>
-                    <span>@Model.OtherDriverLabel</span>
-                </div>
-                <div class="fr__faultPercent fr__faultPercent--success">@Model.OtherDriverFaultPercent%</div>
-            </div>
-
-            <div class="fr__faultItem">
-                <div class="fr__faultSide">
-                    <i class="fa-solid fa-user-check"></i>
-                    <span>@Model.CurrentDriverLabel</span>
-                </div>
-                <div class="fr__faultPercent fr__faultPercent--danger">@Model.CurrentDriverFaultPercent%</div>
-            </div>
-        </div>
-
-        <div class="fr__explainBox">
-            <div class="fr__boxTitle">
-                <i class="fa-solid fa-circle-info"></i>
-                مبررات القرار
-            </div>
-            <div class="fr__paragraph">@Model.DecisionExplanation</div>
-        </div>
-    </section>
-
-    <section class="fr__card">
-        <div class="fr__sectionHead">
-            <div class="fr__sectionIcon">
                 <i class="fa-solid fa-user-shield"></i>
             </div>
             <h3 class="fr__sectionTitle">ملاحظة المحقق</h3>
         </div>
 
-        <div class="fr__explainBox">
-            <div class="fr__boxTitle">
-                <i class="fa-solid fa-note-sticky"></i>
-                ملاحظة المراجعة
+        <div class="fr__reviewBox">
+            <div class="fr__reviewStatus
+            @(Model.ApprovalStatus == "مقبول" ? "fr__reviewStatus--accepted" :
+              Model.ApprovalStatus == "مرفوض" ? "fr__reviewStatus--rejected" :
+              "fr__reviewStatus--pending")">
+                @Model.ApprovalStatus
             </div>
-            <div class="fr__paragraph">
-                @(string.IsNullOrWhiteSpace(Model.InspectorNote)
-                    ? "لا توجد ملاحظة من المحقق على هذا الحادث."
-                    : Model.InspectorNote)
+
+            <div class="fr__reviewNote">
+                @if (!string.IsNullOrWhiteSpace(Model.InspectorNote))
+                {
+                    @Model.InspectorNote
+                }
+                else if (Model.ApprovalStatus == "قيد المراجعة")
+                {
+                    <text>الحادث لا يزال قيد المراجعة، ولم يطّلع عليه المحقق بعد. سيتم إشعارك فور  الانتهاء من المراجعة.</text>
+                }
+                else
+                {
+                    <text>لا توجد ملاحظة من المحقق على هذا الحادث.</text>
+                }
             </div>
         </div>
     </section>

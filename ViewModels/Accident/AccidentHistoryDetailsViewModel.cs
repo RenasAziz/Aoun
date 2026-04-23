@@ -5,7 +5,8 @@ namespace Aoun.ViewModels.Accident
     public class AccidentHistoryDetailsViewModel : FinalResultViewModel
     {
         public string? InspectorNote { get; set; }
-        public string ApprovalStatus { get; set; } = "قيد المراجعة";
+       
+        public string? ApprovalStatus { get; set; }
 
         public string ReportTitle { get; set; } = "تقرير حادث رسمي";
         public string ReportSource { get; set; } = "منصة عون - نظام تحليل الحوادث";
