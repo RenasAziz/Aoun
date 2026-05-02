@@ -58,7 +58,9 @@
                 @Html.ValidationSummary()
             </div>
 
-            <button type="submit" class="sv__btn">
+        
+
+            <button type="submit" class="sv__btn" id="continueBtn" disabled>
                 متابعة
             </button>
 
@@ -112,16 +114,38 @@
     </div>
 </div>
 
+
+
 @section Scripts {
     <script>
-        (function () {
-            // تحسين اختيار العنصر (شكل check يمين)
-            document.querySelectorAll(".sv__item").forEach(function (item) {
-                item.addEventListener("click", function () {
-                    document.querySelectorAll(".sv__item").forEach(x => x.classList.remove("is-checked"));
-                    item.classList.add("is-checked");
+        document.addEventListener("DOMContentLoaded", function () {
+            var continueBtn = document.getElementById("continueBtn");
+            var vehicleRadios = document.querySelectorAll("input[name='SelectedVehicleId']");
+
+            function updateSelectionUI() {
+                document.querySelectorAll(".sv__item").forEach(function (item) {
+                    item.classList.remove("is-checked");
                 });
+
+                var selected = document.querySelector("input[name='SelectedVehicleId']:checked");
+
+                if (selected) {
+                    var selectedItem = selected.closest(".sv__item");
+                    if (selectedItem) {
+                        selectedItem.classList.add("is-checked");
+                    }
+                }
+
+                if (continueBtn) {
+                    continueBtn.disabled = selected == null;
+                }
+            }
+
+            vehicleRadios.forEach(function (radio) {
+                radio.addEventListener("change", updateSelectionUI);
             });
-        })();
+
+            updateSelectionUI();
+        });
     </script>
 }

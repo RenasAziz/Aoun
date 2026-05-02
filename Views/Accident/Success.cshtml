@@ -11,6 +11,26 @@
         <p class="text-muted mb-0">يمكنك الآن مشاركة رمز الحادث مع السائق الآخر</p>
     </div>
 
+
+    <!-- Join timeout countdown -->
+    <div class="join-expiry-box text-center mb-3">
+        <div class="join-expiry-title">
+            مهلة انضمام الطرف الآخر
+        </div>
+
+        <div id="joinCountdown" class="join-countdown">
+            05:00
+        </div>
+
+        <div id="joinCountdownHint" class="join-countdown-hint">
+            يجب على الطرف الآخر الانضمام خلال هذه المهلة.
+        </div>
+
+        <div id="joinExpiredMessage" class="join-expired-message d-none">
+            انتهت مهلة الانضمام. يمكن إنشاء حادث جديد ومشاركة رمز جديد.
+        </div>
+    </div>
+
     <div id="accidentCodeCard" class="card shadow-sm mb-3 success-card">
         <div class="card-body text-center">
             <div class="text-muted small mb-2">رقم الحادث</div>
@@ -42,24 +62,7 @@
         </div>
     </div>
 
-    <!-- Join timeout countdown -->
-    <div class="join-expiry-box text-center mb-3">
-        <div class="join-expiry-title">
-            مهلة انضمام الطرف الآخر
-        </div>
 
-        <div id="joinCountdown" class="join-countdown">
-            05:00
-        </div>
-
-        <div id="joinCountdownHint" class="join-countdown-hint">
-            يجب على الطرف الآخر الانضمام خلال هذه المهلة.
-        </div>
-
-        <div id="joinExpiredMessage" class="join-expired-message d-none">
-            انتهت مهلة الانضمام. يمكن إنشاء حادث جديد ومشاركة رمز جديد.
-        </div>
-    </div>
 
     <!-- Waiting status inside Success page -->
     <div id="waitingCard" class="card shadow-sm mb-4 success-card">

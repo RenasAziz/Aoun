@@ -139,6 +139,12 @@ namespace Aoun.Controllers
                 return View(vm);
             }
 
+            if (string.IsNullOrWhiteSpace(vm.LocationText))
+            {
+                ModelState.AddModelError("LocationText", "يرجى تحديد موقع الحادث أو إدخاله يدويًا.");
+                return View(vm);
+            }
+
             var currentUserId = GetCurrentUserId();
             if (currentUserId == null)
                 return RedirectToAction("Login", "Auth");
@@ -723,6 +729,13 @@ namespace Aoun.Controllers
                     return View(vm);
                 }
 
+                if (file.Length > MaxImageSizeBytes)
+                {
+                    ModelState.AddModelError("", $"{display} حجمها كبير جدًا. الحد الأقصى المسموح هو 5MB.");
+                    ViewBag.FromPost = true;
+                    return View(vm);
+                }
+
                 if (!IsAllowedImage(file))
                 {
                     ModelState.AddModelError("", $"صيغة {display} غير مدعومة. ارفعي JPG أو PNG فقط.");
@@ -736,11 +749,21 @@ namespace Aoun.Controllers
                 var file = kv.Value.File;
                 var display = kv.Value.DisplayName;
 
-                if (file != null && file.Length > 0 && !IsAllowedImage(file))
+                if (file != null && file.Length > 0)
                 {
-                    ModelState.AddModelError("", $"صيغة {display} غير مدعومة. ارفعي JPG أو PNG فقط.");
-                    ViewBag.FromPost = true;
-                    return View(vm);
+                    if (file.Length > MaxImageSizeBytes)
+                    {
+                        ModelState.AddModelError("", $"{display} حجمها كبير جدًا. الحد الأقصى المسموح هو 5MB.");
+                        ViewBag.FromPost = true;
+                        return View(vm);
+                    }
+
+                    if (!IsAllowedImage(file))
+                    {
+                        ModelState.AddModelError("", $"صيغة {display} غير مدعومة. ارفعي JPG أو PNG فقط.");
+                        ViewBag.FromPost = true;
+                        return View(vm);
+                    }
                 }
             }
 
@@ -767,6 +790,13 @@ namespace Aoun.Controllers
 
                 var url = await SaveImageAsync(file, vm.AccidentId, role, label);
 
+                if (string.IsNullOrWhiteSpace(url))
+                {
+                    ModelState.AddModelError("", $"تعذر حفظ {kv.Value.DisplayName}. يرجى المحاولة مرة أخرى.");
+                    ViewBag.FromPost = true;
+                    return View(vm);
+                }
+
                 _context.Images.Add(new Image
                 {
                     AccidentId = vm.AccidentId,
@@ -785,6 +815,13 @@ namespace Aoun.Controllers
                     continue;
 
                 var url = await SaveImageAsync(file, vm.AccidentId, role, label);
+
+                if (string.IsNullOrWhiteSpace(url))
+                {
+                    ModelState.AddModelError("", $"تعذر حفظ {kv.Value.DisplayName}. يرجى المحاولة مرة أخرى.");
+                    ViewBag.FromPost = true;
+                    return View(vm);
+                }
 
                 if (label == "Damage1")
                     damage1Url = url;
@@ -917,95 +954,206 @@ namespace Aoun.Controllers
         // =========================================================
         // Helpers (Images)
         // =========================================================
+
+        private const long MaxImageSizeBytes = 5 * 1024 * 1024; // 5 MB
         private static bool IsAllowedImage(IFormFile file)
         {
             var ext = Path.GetExtension(file.FileName)?.ToLowerInvariant();
             return ext == ".jpg" || ext == ".jpeg" || ext == ".png";
         }
 
-        private static async Task<string> SaveImageAsync(IFormFile file, int accidentId, int role, string fileBaseName)
+        private static async Task<string?> SaveImageAsync(IFormFile file, int accidentId, int role, string fileBaseName)
         {
-            var folderName = $"accident_{accidentId}";
-            var driverFolder = $"driver_{role}";
-            var root = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", folderName, driverFolder);
+            try
+            {
+                var folderName = $"accident_{accidentId}";
+                var driverFolder = $"driver_{role}";
+                var root = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", folderName, driverFolder);
 
-            if (!Directory.Exists(root))
-                Directory.CreateDirectory(root);
+                if (!Directory.Exists(root))
+                    Directory.CreateDirectory(root);
 
-            var ext = Path.GetExtension(file.FileName)?.ToLowerInvariant();
-            var fileName = $"{fileBaseName}{ext}";
-            var fullPath = Path.Combine(root, fileName);
+                var ext = Path.GetExtension(file.FileName)?.ToLowerInvariant();
+                var fileName = $"{fileBaseName}{ext}";
+                var fullPath = Path.Combine(root, fileName);
 
-            using var stream = new FileStream(fullPath, FileMode.Create);
-            await file.CopyToAsync(stream);
+                using var stream = new FileStream(fullPath, FileMode.Create);
+                await file.CopyToAsync(stream);
 
-            return $"/uploads/{folderName}/{driverFolder}/{fileName}";
+                return $"/uploads/{folderName}/{driverFolder}/{fileName}";
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         private async Task<SinglePredictionResponse?> PredictSingleImageAsync(string physicalPath)
         {
             if (!System.IO.File.Exists(physicalPath))
-                return null;
+                return new SinglePredictionResponse
+                {
+                    Success = false,
+                    Error = "Image file was not found."
+                };
 
-            var client = _httpClientFactory.CreateClient();
+            try
+            {
+                var client = _httpClientFactory.CreateClient();
+                client.Timeout = TimeSpan.FromSeconds(20);
 
-            using var content = new MultipartFormDataContent();
-            await using var fs = new FileStream(physicalPath, FileMode.Open, FileAccess.Read);
-            using var fileContent = new StreamContent(fs);
+                using var content = new MultipartFormDataContent();
+                await using var fs = new FileStream(physicalPath, FileMode.Open, FileAccess.Read);
+                using var fileContent = new StreamContent(fs);
 
-            fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
-            content.Add(fileContent, "image", Path.GetFileName(physicalPath));
+                fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
+                content.Add(fileContent, "image", Path.GetFileName(physicalPath));
 
-            var response = await client.PostAsync("http://127.0.0.1:8000/predict-single", content);
+                var response = await client.PostAsync("http://127.0.0.1:8000/predict-single", content);
 
-            if (!response.IsSuccessStatusCode)
+                if (!response.IsSuccessStatusCode)
+                {
+                    return new SinglePredictionResponse
+                    {
+                        Success = false,
+                        Error = $"Prediction API failed: {response.StatusCode}"
+                    };
+                }
+
+                var json = await response.Content.ReadAsStringAsync();
+
+                var result = JsonSerializer.Deserialize<SinglePredictionResponse>(
+                    json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                );
+
+                if (result == null)
+                {
+                    return new SinglePredictionResponse
+                    {
+                        Success = false,
+                        Error = "Prediction API returned an empty response."
+                    };
+                }
+
+                return result;
+            }
+            catch (TaskCanceledException)
             {
                 return new SinglePredictionResponse
                 {
                     Success = false,
-                    Error = $"Prediction API failed: {response.StatusCode}"
+                    Error = "Prediction API timeout."
                 };
             }
-
-            var json = await response.Content.ReadAsStringAsync();
-
-            return JsonSerializer.Deserialize<SinglePredictionResponse>(
-                json,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-            );
+            catch (HttpRequestException ex)
+            {
+                return new SinglePredictionResponse
+                {
+                    Success = false,
+                    Error = $"Prediction API connection error: {ex.Message}"
+                };
+            }
+            catch (JsonException)
+            {
+                return new SinglePredictionResponse
+                {
+                    Success = false,
+                    Error = "Prediction API returned invalid JSON."
+                };
+            }
+            catch (Exception ex)
+            {
+                return new SinglePredictionResponse
+                {
+                    Success = false,
+                    Error = $"Unexpected prediction error: {ex.Message}"
+                };
+            }
         }
 
         private async Task<SegmentationPredictionResponse?> PredictSegmentationAsync(string physicalPath)
         {
             if (!System.IO.File.Exists(physicalPath))
-                return null;
+                return new SegmentationPredictionResponse
+                {
+                    Success = false,
+                    Error = "Image file was not found."
+                };
 
-            var client = _httpClientFactory.CreateClient();
+            try
+            {
+                var client = _httpClientFactory.CreateClient();
+                client.Timeout = TimeSpan.FromSeconds(30);
 
-            using var content = new MultipartFormDataContent();
-            await using var fs = new FileStream(physicalPath, FileMode.Open, FileAccess.Read);
-            using var fileContent = new StreamContent(fs);
+                using var content = new MultipartFormDataContent();
+                await using var fs = new FileStream(physicalPath, FileMode.Open, FileAccess.Read);
+                using var fileContent = new StreamContent(fs);
 
-            fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
-            content.Add(fileContent, "image", Path.GetFileName(physicalPath));
+                fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
+                content.Add(fileContent, "image", Path.GetFileName(physicalPath));
 
-            var response = await client.PostAsync("http://127.0.0.1:8000/predict-segmentation", content);
+                var response = await client.PostAsync("http://127.0.0.1:8000/predict-segmentation", content);
 
-            if (!response.IsSuccessStatusCode)
+                if (!response.IsSuccessStatusCode)
+                {
+                    return new SegmentationPredictionResponse
+                    {
+                        Success = false,
+                        Error = $"Segmentation API failed: {response.StatusCode}"
+                    };
+                }
+
+                var json = await response.Content.ReadAsStringAsync();
+
+                var result = JsonSerializer.Deserialize<SegmentationPredictionResponse>(
+                    json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                );
+
+                if (result == null)
+                {
+                    return new SegmentationPredictionResponse
+                    {
+                        Success = false,
+                        Error = "Segmentation API returned an empty response."
+                    };
+                }
+
+                return result;
+            }
+            catch (TaskCanceledException)
             {
                 return new SegmentationPredictionResponse
                 {
                     Success = false,
-                    Error = $"Segmentation API failed: {response.StatusCode}"
+                    Error = "Segmentation API timeout."
                 };
             }
-
-            var json = await response.Content.ReadAsStringAsync();
-
-            return JsonSerializer.Deserialize<SegmentationPredictionResponse>(
-                json,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-            );
+            catch (HttpRequestException ex)
+            {
+                return new SegmentationPredictionResponse
+                {
+                    Success = false,
+                    Error = $"Segmentation API connection error: {ex.Message}"
+                };
+            }
+            catch (JsonException)
+            {
+                return new SegmentationPredictionResponse
+                {
+                    Success = false,
+                    Error = "Segmentation API returned invalid JSON."
+                };
+            }
+            catch (Exception ex)
+            {
+                return new SegmentationPredictionResponse
+                {
+                    Success = false,
+                    Error = $"Unexpected segmentation error: {ex.Message}"
+                };
+            }
         }
 
         private async Task SaveSegmentationDetectionsAsync(Image image, SegmentationPredictionResponse segmentation)
@@ -1434,9 +1582,16 @@ namespace Aoun.Controllers
         [HttpGet]
         public async Task<IActionResult> MirrorDoneStatus(int accidentId, int role)
         {
+            var completedMirrorSteps = new[]
+            {
+        "MirrorDone",
+        "FreeText",
+        "FinalResult"
+    };
+
             bool bothDone = await _context.AccidentSessionParticipants
                 .Where(p => p.AccidentId == accidentId && p.IsJoined)
-                .AllAsync(p => p.CurrentStep == "MirrorDone");
+                .AllAsync(p => p.CurrentStep != null && completedMirrorSteps.Contains(p.CurrentStep));
 
             return Json(new
             {

@@ -6715,3 +6715,8 @@ i[class^="fa"], i[class*=" fa"],
         opacity: 1;
     }
 }
+
+.hp-btn-confirm:disabled {
+    opacity: 0.90;
+    cursor: not-allowed;
+}

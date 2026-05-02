@@ -82,139 +82,185 @@
             </form>
         </div>
     </div>
-</section>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-    (function () {
 
-        const confirmBtn = document.getElementById("confirmBtn");
 
-        // ===== 1) التاريخ/الوقت من الجهاز =====
-        // تخزين ISO للـ POST
-        const now = new Date();
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        (function () {
 
-        // ISO date: yyyy-MM-dd
-        const isoDate = now.toISOString().slice(0, 10);
+            const confirmBtn = document.getElementById("confirmBtn");
+            const cityLine = document.getElementById("cityLine");
+            const addressLine = document.getElementById("addressLine");
+            const locationInput = document.getElementById("LocationText");
+            const latitudeInput = document.getElementById("Latitude");
+            const longitudeInput = document.getElementById("Longitude");
 
-        // ISO time: HH:mm:ss (من وقت الجهاز المحلي)
-        const hh = String(now.getHours()).padStart(2, '0');
-        const mm = String(now.getMinutes()).padStart(2, '0');
-        const ss = "00";
-        const isoTime = `${hh}:${mm}:${ss}`;
+            // ===== 1) التاريخ/الوقت من الجهاز =====
+            const now = new Date();
 
-        document.getElementById("AccidentDateIso").value = isoDate;
-        document.getElementById("AccidentTimeIso").value = isoTime;
+            const isoDate = now.toISOString().slice(0, 10);
 
-        // عرض: يوم/شهر/سنة ميلادي
-        const dateFormatter = new Intl.DateTimeFormat('ar-SA-u-ca-gregory', {
-            day: '2-digit', month: '2-digit', year: 'numeric'
-        });
+            const hh = String(now.getHours()).padStart(2, '0');
+            const mm = String(now.getMinutes()).padStart(2, '0');
+            const ss = "00";
+            const isoTime = `${hh}:${mm}:${ss}`;
 
-        // عرض: 11:10 م / 12:00 ص
-        const timeFormatter = new Intl.DateTimeFormat('ar-SA-u-ca-gregory', {
-            hour: 'numeric', minute: '2-digit', hour12: true
-        });
+            document.getElementById("AccidentDateIso").value = isoDate;
+            document.getElementById("AccidentTimeIso").value = isoTime;
 
-        document.getElementById("dateDisplay").textContent = dateFormatter.format(now);
-        document.getElementById("timeDisplay").textContent = timeFormatter.format(now);
+            const dateFormatter = new Intl.DateTimeFormat('ar-SA-u-ca-gregory', {
+                day: '2-digit', month: '2-digit', year: 'numeric'
+            });
 
-        // ===== 2) الخريطة + تحديد الموقع =====
-        const map = L.map('map').setView([21.4858, 39.1925], 12); // جدة افتراضياً
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19
-        }).addTo(map);
+            const timeFormatter = new Intl.DateTimeFormat('ar-SA-u-ca-gregory', {
+                hour: 'numeric', minute: '2-digit', hour12: true
+            });
 
-        let marker = L.marker([21.4858, 39.1925], { draggable: true }).addTo(map);
+            document.getElementById("dateDisplay").textContent = dateFormatter.format(now);
+            document.getElementById("timeDisplay").textContent = timeFormatter.format(now);
 
-        function setLatLng(lat, lng) {
-            document.getElementById("Latitude").value = lat;
-            document.getElementById("Longitude").value = lng;
-        }
+            // ===== 2) الخريطة + تحديد الموقع =====
+            const defaultLat = 21.4858;
+            const defaultLng = 39.1925;
 
-        let geocodeTimer = null;
+            const map = L.map('map').setView([defaultLat, defaultLng], 12);
 
-        async function reverseGeocode(lat, lng) {
-            // Arabic: انتظر شوي قبل إرسال الطلب (Debounce)
-            // English: Debounce to reduce requests
-            if (geocodeTimer) clearTimeout(geocodeTimer);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19
+            }).addTo(map);
 
-            geocodeTimer = setTimeout(async () => {
-                try {
-                    document.getElementById("cityLine").textContent = "—";
-                    document.getElementById("addressLine").textContent = "جارٍ جلب العنوان...";
+            let marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(map);
 
-                    const url =
-                        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}` +
-                        `&zoom=18&addressdetails=1&accept-language=ar&email=yourapp@example.com`;
+            // في البداية لا نعتمد الموقع الافتراضي كموقع للحادث
+            // At first, do not save the default marker as the accident location.
+            confirmBtn.disabled = true;
+            cityLine.textContent = "بانتظار تحديد الموقع";
+            addressLine.textContent = "يرجى السماح بالوصول للموقع أو تحريك المؤشر يدويًا على الخريطة.";
 
-                    const res = await fetch(url, {
-                        headers: {
-                            "Accept": "application/json"
-                        }
+            function showLocalToast(type, title, message) {
+                if (typeof createAounToast === "function") {
+                    createAounToast({
+                        id: Date.now().toString() + Math.random().toString(16).slice(2),
+                        type: type,
+                        title: title,
+                        message: message
                     });
-
-                    if (!res.ok) {
-                        // Arabic: اطبع السبب الحقيقي في الكونسل
-                        // English: Print real error in console
-                        console.error("Reverse geocode failed:", res.status, res.statusText);
-                        throw new Error(`HTTP ${res.status}`);
-                    }
-
-                    const data = await res.json();
-
-                    const display = data.display_name || "";
-                    const addr = data.address || {};
-                    const city = addr.city || addr.town || addr.village || addr.state || "—";
-
-                    document.getElementById("cityLine").textContent = city;
-                    document.getElementById("addressLine").textContent = display || "—";
-
-                    document.getElementById("LocationText").value = display || `${lat}, ${lng}`;
-                    confirmBtn.disabled = !document.getElementById("LocationText").value;
-
-                } catch (e) {
-                    console.error("Reverse geocode error:", e);
-
-                    // Arabic: fallback = احفظ الإحداثيات فقط
-                    // English: fallback store only coordinates
-                    document.getElementById("LocationText").value = `${lat}, ${lng}`;
-                    document.getElementById("cityLine").textContent = "—";
-                    document.getElementById("addressLine").textContent =
-                        "تعذر جلب العنوان حالياً، تم حفظ الإحداثيات.";
-                    confirmBtn.disabled = false;
+                } else {
+                    alert(message);
                 }
-            }, 600); // 600ms
-        }
+            }
 
+            function setLatLng(lat, lng) {
+                latitudeInput.value = lat;
+                longitudeInput.value = lng;
+            }
 
-        // عند تحريك الماركر
-        marker.on('dragend', function () {
-            const p = marker.getLatLng();
-            setLatLng(p.lat, p.lng);
-            reverseGeocode(p.lat, p.lng);
-        });
+            function clearLocationValues() {
+                locationInput.value = "";
+                latitudeInput.value = "";
+                longitudeInput.value = "";
+                confirmBtn.disabled = true;
+            }
 
-        // GPS من الجهاز
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(async pos => {
-                const lat = pos.coords.latitude;
-                const lng = pos.coords.longitude;
-                map.setView([lat, lng], 16);
+            let geocodeTimer = null;
+
+            async function reverseGeocode(lat, lng) {
+                if (geocodeTimer) clearTimeout(geocodeTimer);
+
+                geocodeTimer = setTimeout(async () => {
+                    try {
+                        cityLine.textContent = "—";
+                        addressLine.textContent = "جارٍ جلب العنوان...";
+
+                        const url =
+                            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}` +
+                            `&zoom=18&addressdetails=1&accept-language=ar&email=yourapp@example.com`;
+
+                        const res = await fetch(url, {
+                            headers: {
+                                "Accept": "application/json"
+                            }
+                        });
+
+                        if (!res.ok) {
+                            console.error("Reverse geocode failed:", res.status, res.statusText);
+                            throw new Error(`HTTP ${res.status}`);
+                        }
+
+                        const data = await res.json();
+
+                        const display = data.display_name || "";
+                        const addr = data.address || {};
+                        const city = addr.city || addr.town || addr.village || addr.state || "—";
+
+                        cityLine.textContent = city;
+                        addressLine.textContent = display || "تم تحديد الإحداثيات.";
+
+                        locationInput.value = display || `${lat}, ${lng}`;
+                        confirmBtn.disabled = !locationInput.value;
+
+                    } catch (e) {
+                        console.error("Reverse geocode error:", e);
+
+                        // لو فشل جلب العنوان، نحفظ الإحداثيات التي اختارها المستخدم
+                        // If address lookup fails, store the coordinates selected by the user.
+                        locationInput.value = `${lat}, ${lng}`;
+                        cityLine.textContent = "تم تحديد الموقع";
+                        addressLine.textContent = "تعذر جلب العنوان حالياً، سيتم حفظ الإحداثيات.";
+                        confirmBtn.disabled = false;
+
+                        showLocalToast("warning", "ملاحظة", "تعذر جلب العنوان، لكن تم تحديد الإحداثيات بنجاح.");
+                    }
+                }, 600);
+            }
+
+            function useSelectedPoint(lat, lng) {
                 marker.setLatLng([lat, lng]);
                 setLatLng(lat, lng);
-                await reverseGeocode(lat, lng);
-            }, async () => {
-                // لو رفض الإذن
-                const p = marker.getLatLng();
-                setLatLng(p.lat, p.lng);
-                await reverseGeocode(p.lat, p.lng);
-            }, { enableHighAccuracy: true, timeout: 8000 });
-        } else {
-            const p = marker.getLatLng();
-            setLatLng(p.lat, p.lng);
-            reverseGeocode(p.lat, p.lng);
-        }
+                reverseGeocode(lat, lng);
+            }
 
-    })();
-</script>
+            // عند تحريك الماركر يدويًا
+            marker.on('dragend', function () {
+                const p = marker.getLatLng();
+                useSelectedPoint(p.lat, p.lng);
+            });
+
+            // عند الضغط على الخريطة، ننقل المؤشر للمكان المختار
+            map.on('click', function (e) {
+                useSelectedPoint(e.latlng.lat, e.latlng.lng);
+            });
+
+            // GPS من الجهاز
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async pos => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+
+                    map.setView([lat, lng], 16);
+                    useSelectedPoint(lat, lng);
+
+                    showLocalToast("success", "تم بنجاح", "تم تحديد موقعك الحالي.");
+                }, async error => {
+                    clearLocationValues();
+
+                    cityLine.textContent = "لم يتم السماح بالموقع";
+                    addressLine.textContent = "يمكنك تحريك المؤشر يدويًا على الخريطة لتحديد موقع الحادث.";
+
+                    showLocalToast("warning", "ملاحظة", "لم يتم السماح بالوصول للموقع. حددي موقع الحادث يدويًا من الخريطة.");
+                }, {
+                    enableHighAccuracy: true,
+                    timeout: 8000
+                });
+            } else {
+                clearLocationValues();
+
+                cityLine.textContent = "الموقع غير مدعوم";
+                addressLine.textContent = "متصفحك لا يدعم تحديد الموقع. حددي موقع الحادث يدويًا من الخريطة.";
+
+                showLocalToast("warning", "ملاحظة", "متصفحك لا يدعم تحديد الموقع. يمكنك تحديد الموقع يدويًا من الخريطة.");
+            }
+
+        })();
+    </script>

@@ -144,7 +144,7 @@
                 <div class="fr__emptyIcon">
                     <i class="fa-regular fa-image"></i>
                 </div>
-                <div class="fr__emptyTitle">لا يوجد ضرر</div>
+                <div class="fr__emptyTitle">لم يتم إرفاق صور ضرر</div>
                 <div class="fr__emptyText">لم يتم إرفاق صور ضرر لهذا الطرف.</div>
             </div>
         }
@@ -153,6 +153,7 @@
             @if (!string.IsNullOrWhiteSpace(Model.Damage1PredictedLabel)
            || !string.IsNullOrWhiteSpace(Model.Damage1SegmentationResultPath)
            || (Model.Damage1SegmentationDetections != null && Model.Damage1SegmentationDetections.Any()))
+          
             {
                 <div class="fr__damageCard">
                     <div class="fr__damageHead">
@@ -162,7 +163,8 @@
                         </div>
                     </div>
 
-                    @if (!string.IsNullOrWhiteSpace(Model.Damage1PredictedLabel))
+                    @if (!string.IsNullOrWhiteSpace(Model.Damage1PredictedLabel)
+                   && Model.Damage1SegmentationHasDamage != false)
                     {
                         <div class="fr__infoRow">
                             <div class="fr__infoLabel">تصنيف جهة الضرر</div>
@@ -202,6 +204,8 @@
                     {
                         <div class="fr__note">لم يتم رصد ضرر واضح في هذه الصورة.</div>
                     }
+
+
                 </div>
             }
 
@@ -217,7 +221,8 @@
                         </div>
                     </div>
 
-                    @if (!string.IsNullOrWhiteSpace(Model.Damage2PredictedLabel))
+                    @if (!string.IsNullOrWhiteSpace(Model.Damage2PredictedLabel)
+                   && Model.Damage2SegmentationHasDamage != false)
                     {
                         <div class="fr__infoRow">
                             <div class="fr__infoLabel">تصنيف جهة الضرر</div>
@@ -225,7 +230,6 @@
                             <div class="fr__infoMuted">نسبة الثقة: @Model.Damage2PredictionConfidence%</div>
                         </div>
                     }
-
                     @if (!string.IsNullOrWhiteSpace(Model.Damage2SegmentationResultPath))
                     {
                         <div class="fr__imageWrap">
