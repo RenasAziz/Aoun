@@ -187,9 +187,35 @@ namespace Aoun.Controllers
         // =========================================================
         [AuthorizeUser]
         [HttpGet]
-        public IActionResult Success(int accidentId)
+        public async Task<IActionResult> Success(int accidentId)
         {
+            var accident = await _context.Accidents
+                .FirstOrDefaultAsync(a => a.AccidentId == accidentId);
+
+            if (accident == null)
+                return NotFound();
+
+            var currentRole = await GetCurrentUserRoleInAccidentAsync(accidentId);
+            if (currentRole == null)
+                return RedirectToAction("Join");
+
             var code = $"ACC-{accidentId:000000}";
+
+            int remainingSeconds = 5 * 60;
+
+            if (accident.AccidentDate.HasValue && accident.AccidentTime.HasValue)
+            {
+                var accidentDateTime = accident.AccidentDate.Value.ToDateTime(accident.AccidentTime.Value);
+                var expiresAt = accidentDateTime.AddMinutes(5);
+
+                remainingSeconds = (int)(expiresAt - DateTime.Now).TotalSeconds;
+
+                if (remainingSeconds < 0)
+                    remainingSeconds = 0;
+            }
+
+            ViewBag.JoinRemainingSeconds = remainingSeconds;
+
             var vm = new AccidentSuccessViewModel
             {
                 AccidentId = accidentId,
@@ -208,6 +234,26 @@ namespace Aoun.Controllers
         {
             var accident = await _context.Accidents.FirstOrDefaultAsync(a => a.AccidentId == accidentId);
             if (accident == null) return NotFound();
+
+            var joinedCount = await _context.AccidentSessionParticipants
+                .Where(p => p.AccidentId == accidentId && p.IsJoined)
+                .CountAsync();
+
+            if (joinedCount < 2 &&
+                accident.AccidentDate.HasValue &&
+                accident.AccidentTime.HasValue)
+            {
+                var accidentDateTime = accident.AccidentDate.Value.ToDateTime(accident.AccidentTime.Value);
+
+                if (DateTime.Now > accidentDateTime.AddMinutes(5))
+                {
+                    accident.Status = "منتهي";
+                    await _context.SaveChangesAsync();
+
+                    TempData["ToastWarning"] = "انتهت مهلة انضمام الطرف الآخر. يرجى إنشاء حادث جديد.";
+                    return RedirectToAction("Join");
+                }
+            }
 
             var currentRole = await GetCurrentUserRoleInAccidentAsync(accidentId);
             if (currentRole == null)
@@ -233,7 +279,21 @@ namespace Aoun.Controllers
                 return Json(new
                 {
                     roomReady = false,
+                    expired = false,
                     redirectUrl = Url.Action("Login", "Auth")
+                });
+            }
+
+            var accident = await _context.Accidents
+                .FirstOrDefaultAsync(a => a.AccidentId == accidentId);
+
+            if (accident == null)
+            {
+                return Json(new
+                {
+                    roomReady = false,
+                    expired = true,
+                    redirectUrl = Url.Action("Join", "Accident")
                 });
             }
 
@@ -245,6 +305,7 @@ namespace Aoun.Controllers
                 return Json(new
                 {
                     roomReady = false,
+                    expired = false,
                     redirectUrl = Url.Action("Join", "Accident")
                 });
             }
@@ -257,17 +318,50 @@ namespace Aoun.Controllers
 
             if (roomReady)
             {
-                var accident = await _context.Accidents.FirstOrDefaultAsync(a => a.AccidentId == accidentId);
-                if (accident != null && accident.Status != "فعال")
+                if (accident.Status != "فعال")
                 {
                     accident.Status = "فعال";
                     await _context.SaveChangesAsync();
+                }
+
+                return Json(new
+                {
+                    roomReady = true,
+                    expired = false,
+                    redirectUrl = Url.Action("UploadPhotos", "Accident", new
+                    {
+                        accidentId,
+                        role = currentParticipant.Role
+                    })
+                });
+            }
+
+            // If the second party has not joined within 5 minutes, expire the accident session.
+            // إذا لم ينضم الطرف الآخر خلال 5 دقائق، تنتهي مهلة الانضمام.
+            if (accident.AccidentDate.HasValue && accident.AccidentTime.HasValue)
+            {
+                var accidentDateTime = accident.AccidentDate.Value.ToDateTime(accident.AccidentTime.Value);
+
+                if (DateTime.Now > accidentDateTime.AddMinutes(5))
+                {
+                    accident.Status = "منتهي";
+                    await _context.SaveChangesAsync();
+
+                    TempData["ToastWarning"] = "انتهت مهلة انضمام الطرف الآخر. يرجى إنشاء حادث جديد.";
+
+                    return Json(new
+                    {
+                        roomReady = false,
+                        expired = true,
+                        redirectUrl = Url.Action("Join", "Accident")
+                    });
                 }
             }
 
             return Json(new
             {
-                roomReady,
+                roomReady = false,
+                expired = false,
                 redirectUrl = Url.Action("UploadPhotos", "Accident", new
                 {
                     accidentId,
@@ -295,12 +389,13 @@ namespace Aoun.Controllers
         public async Task<IActionResult> JoinByCode(string code)
         {
             var currentUserId = GetCurrentUserId();
+
             if (currentUserId == null)
                 return RedirectToAction("Login", "Auth");
 
             if (string.IsNullOrWhiteSpace(code))
             {
-                TempData["JoinError"] = "الرجاء إدخال رمز الحادث.";
+                TempData["ToastError"] = "يرجى إدخال رمز الحادث للمتابعة.";
                 return RedirectToAction("Join");
             }
 
@@ -310,7 +405,7 @@ namespace Aoun.Controllers
 
             if (accidentId <= 0)
             {
-                TempData["JoinError"] = "رمز الحادث غير صحيح.";
+                TempData["ToastError"] = "رمز الحادث غير صحيح. يرجى التأكد من كتابته بالشكل الصحيح.";
                 return RedirectToAction("Join");
             }
 
@@ -319,61 +414,98 @@ namespace Aoun.Controllers
 
             if (accident == null)
             {
-                TempData["JoinError"] = "لا يوجد حادث بهذا الرقم.";
+                TempData["ToastError"] = "لا يوجد حادث بهذا الرقم. يرجى التأكد من الرمز والمحاولة مرة أخرى.";
                 return RedirectToAction("Join");
             }
 
             int driverUserId = currentUserId.Value;
 
-            bool alreadyJoined = await _context.AccidentSessionParticipants
-                .AnyAsync(p => p.AccidentId == accidentId && p.DriverUserId == driverUserId);
+            var existingParticipant = await _context.AccidentSessionParticipants
+                .FirstOrDefaultAsync(p => p.AccidentId == accidentId && p.DriverUserId == driverUserId);
 
-            if (!alreadyJoined)
+            var existingReport = await _context.AccidentReports
+                .FirstOrDefaultAsync(r => r.AccidentId == accidentId);
+
+            // If a report already exists, the accident workflow is completed.
+            // إذا كان التقرير موجودًا، فهذا يعني أن مسار الحادث اكتمل ولا يجب الرجوع للأسئلة.
+            if (existingReport != null)
             {
-                int count = await _context.AccidentSessionParticipants
-                    .CountAsync(p => p.AccidentId == accidentId);
-
-                if (count >= 2)
+                if (existingParticipant != null)
                 {
-                    TempData["JoinError"] = "تم اكتمال أطراف الحادث، لا يمكن الانضمام.";
-                    return RedirectToAction("Join");
+                    existingParticipant.CurrentStep = "FinalResult";
+                    await _context.SaveChangesAsync();
+
+                    TempData["ToastInfo"] = "هذا الحادث مكتمل وتم إنشاء تقريره مسبقًا.";
+                    return RedirectToAction(nameof(FinalResult), new
+                    {
+                        accidentId = accidentId,
+                        role = existingParticipant.Role
+                    });
                 }
 
-                _context.AccidentSessionParticipants.Add(new AccidentSessionParticipant
-                {
-                    AccidentId = accidentId,
-                    DriverUserId = driverUserId,
-                    Role = 2,
-                    IsJoined = true,
-                    JoinedAt = DateTime.UtcNow,
-                    CurrentStep = "Waiting",
-                    IsCompleted = false
-                });
-
-                accident.Status = "فعال";
-                await _context.SaveChangesAsync();
+                TempData["ToastError"] = "لا يمكن الانضمام لهذا الحادث لأنه مكتمل وتم إنشاء تقريره.";
+                return RedirectToAction("Join");
             }
-            else
+
+            if (accident.Status == "مكتمل" || accident.Status == "منتهي" || accident.Status == "ملغي")
             {
-                var existingParticipant = await _context.AccidentSessionParticipants
-                    .FirstOrDefaultAsync(p => p.AccidentId == accidentId && p.DriverUserId == driverUserId);
+                TempData["ToastError"] = "لا يمكن الانضمام لهذا الحادث لأنه مكتمل أو غير نشط.";
+                return RedirectToAction("Join");
+            }
 
-                if (existingParticipant != null && existingParticipant.Role == 1)
-                {
-                    TempData["JoinError"] = "أنتِ منشئة هذا الحادث بالفعل ولا يمكنك الانضمام إليه كطرف ثانٍ.";
-                    return RedirectToAction("Join");
-                }
-
+            if (existingParticipant != null)
+            {
                 if (accident.Status != "فعال")
                 {
                     accident.Status = "فعال";
                     await _context.SaveChangesAsync();
                 }
+
+                TempData["ToastInfo"] = "أنتِ مسجلة مسبقًا في هذا الحادث، تم إعادتك إلى خطوتك الحالية.";
+                return RedirectToCurrentStep(existingParticipant);
             }
+
+            // Check join timeout only for new participants.
+            // التحقق من انتهاء مهلة الانضمام يكون فقط للمستخدم الجديد، وليس للطرف المسجل مسبقًا.
+            if (accident.AccidentDate.HasValue && accident.AccidentTime.HasValue)
+            {
+                var accidentDateTime = accident.AccidentDate.Value.ToDateTime(accident.AccidentTime.Value);
+
+                if (DateTime.Now > accidentDateTime.AddMinutes(5))
+                {
+                    accident.Status = "منتهي";
+                    await _context.SaveChangesAsync();
+
+                    TempData["ToastWarning"] = "انتهت مهلة الانضمام لهذا الحادث. يمكن للطرف الأول إنشاء حادث جديد ومشاركة رمز جديد.";
+                    return RedirectToAction("Join");
+                }
+            }
+
+            int count = await _context.AccidentSessionParticipants
+                .CountAsync(p => p.AccidentId == accidentId);
+
+            if (count >= 2)
+            {
+                TempData["ToastError"] = "تم اكتمال أطراف الحادث، لا يمكن الانضمام.";
+                return RedirectToAction("Join");
+            }
+
+            _context.AccidentSessionParticipants.Add(new AccidentSessionParticipant
+            {
+                AccidentId = accidentId,
+                DriverUserId = driverUserId,
+                Role = 2,
+                IsJoined = true,
+                JoinedAt = DateTime.UtcNow,
+                CurrentStep = "Waiting",
+                IsCompleted = false
+            });
+
+            accident.Status = "فعال";
+            await _context.SaveChangesAsync();
 
             return RedirectToAction("JoinSuccess", new { accidentId = accidentId });
         }
-
         // =========================================================
         // 7) Join Success Page (Shows accident details + role)
         // =========================================================
@@ -426,6 +558,68 @@ namespace Aoun.Controllers
             if (string.IsNullOrWhiteSpace(digitsOnly)) return 0;
 
             return int.TryParse(digitsOnly, out int id) ? id : 0;
+        }
+
+
+        private IActionResult RedirectToCurrentStep(AccidentSessionParticipant participant)
+        {
+            int accidentId = participant.AccidentId;
+            int role = participant.Role;
+
+            return participant.CurrentStep switch
+            {
+                "Waiting" => RedirectToAction("Waiting", new { accidentId, role }),
+
+                "UploadPhotos" => RedirectToAction("UploadPhotos", new { accidentId, role }),
+
+                "SelectVehicle" => RedirectToAction("SelectVehicle", new { accidentId, role }),
+
+                "Questions" => RedirectToAction("Questions", new { accidentId, role, index = 1 }),
+                "MirrorQuestions" => RedirectToAction("MirrorQuestions", new { accidentId, role, index = 1 }),
+
+                "MirrorDone" => RedirectToAction("MirrorDone", new { accidentId, role }),
+
+                "FreeText" => RedirectToAction("FreeText", new { accidentId, role }),
+
+                "FinalResult" => RedirectToAction("FinalResult", new { accidentId, role }),
+
+                _ => RedirectToAction("Waiting", new { accidentId, role })
+            };
+        }
+
+        private async Task<IActionResult?> RedirectIfReportExistsAsync(int accidentId, int role)
+        {
+            if (role != 1 && role != 2)
+                return BadRequest("Role invalid.");
+
+            var currentUserId = GetCurrentUserId();
+
+            if (currentUserId == null)
+                return RedirectToAction("Login", "Auth");
+
+            var participant = await _context.AccidentSessionParticipants
+                .FirstOrDefaultAsync(p =>
+                    p.AccidentId == accidentId &&
+                    p.DriverUserId == currentUserId.Value &&
+                    p.Role == role);
+
+            if (participant == null)
+                return RedirectToAction("Join");
+
+            bool reportExists = await _context.AccidentReports
+                .AnyAsync(r => r.AccidentId == accidentId);
+
+            if (!reportExists)
+                return null;
+
+            participant.CurrentStep = "FinalResult";
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(FinalResult), new
+            {
+                accidentId,
+                role
+            });
         }
 
         // =========================================================
@@ -713,7 +907,11 @@ namespace Aoun.Controllers
 
             await _context.SaveChangesAsync();
 
+            participant.CurrentStep = "SelectVehicle";
+            await _context.SaveChangesAsync();
+
             return RedirectToAction("SelectVehicle", new { accidentId = vm.AccidentId, role = role });
+
         }
 
         // =========================================================
@@ -932,7 +1130,7 @@ namespace Aoun.Controllers
                 });
             }
 
-            participant.CurrentStep = "SelectVehicle";
+            participant.CurrentStep = "Questions";
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Questions), new { accidentId = vm.AccidentId, role = participant.Role, index = 1 });
@@ -952,26 +1150,42 @@ namespace Aoun.Controllers
 
             if (participant == null)
             {
-                TempData["VehicleError"] = "تعذر العثور على مشاركتك في الحادث.";
+                TempData["ToastError"] = "تعذر العثور على مشاركتك في الحادث.";
                 return RedirectToAction("SelectVehicle", new { accidentId = vm.AccidentId, role = vm.Role });
             }
 
             if (string.IsNullOrWhiteSpace(vm.NewLicensePlate))
             {
-                TempData["VehicleError"] = "يرجى إدخال رقم اللوحة.";
+                TempData["ToastError"] = "يرجى إدخال رقم اللوحة.";
+                return RedirectToAction("SelectVehicle", new { accidentId = vm.AccidentId, role = participant.Role });
+            }
+
+            // Normalize plate before checking duplicate.
+            // توحيد صيغة اللوحة قبل فحص التكرار.
+            var normalizedPlate = vm.NewLicensePlate.Trim().ToUpper();
+
+            bool plateExists = await _context.Vehicles
+                .AnyAsync(v => v.LicensePlate != null &&
+                               v.LicensePlate.Trim().ToUpper() == normalizedPlate);
+
+            if (plateExists)
+            {
+                TempData["ToastError"] = "رقم اللوحة مسجل مسبقًا. يرجى اختيار المركبة من القائمة أو إدخال لوحة مختلفة.";
                 return RedirectToAction("SelectVehicle", new { accidentId = vm.AccidentId, role = participant.Role });
             }
 
             var vehicle = new Vehicle
             {
                 DriverUserId = currentUserId.Value,
-                LicensePlate = vm.NewLicensePlate.Trim(),
+                LicensePlate = normalizedPlate,
                 Model = string.IsNullOrWhiteSpace(vm.NewModel) ? null : vm.NewModel.Trim(),
                 Year = vm.NewYear
             };
 
             _context.Vehicles.Add(vehicle);
             await _context.SaveChangesAsync();
+
+
 
             return RedirectToAction("SelectVehicle", new { accidentId = vm.AccidentId, role = participant.Role });
         }
@@ -988,12 +1202,16 @@ namespace Aoun.Controllers
 
             if (role != 1 && role != 2) return BadRequest("Role invalid.");
 
+            var reportRedirect = await RedirectIfReportExistsAsync(accidentId, role);
+            if (reportRedirect != null)
+                return reportRedirect;
+
             int i = index ?? 1;
 
             var vm = await _questionnaireService.GetCoreQuestionAsync(accidentId, role, i);
             if (vm == null)
             {
-                TempData["JoinError"] = "لا توجد أسئلة Core في قاعدة البيانات.";
+                TempData["ToastError"] = "لا توجد أسئلة Core في قاعدة البيانات.";
                 return RedirectToAction("HomePage", "Home");
             }
 
@@ -1005,6 +1223,10 @@ namespace Aoun.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Questions(QuestionsWizardViewModel vm, string nav)
         {
+            var reportRedirect = await RedirectIfReportExistsAsync(vm.AccidentId, vm.Role);
+            if (reportRedirect != null)
+                return reportRedirect;
+
             if (nav == "back")
             {
                 int prev = vm.Index - 1;
@@ -1057,7 +1279,14 @@ namespace Aoun.Controllers
 
             if (vm.Index >= vm.Total)
             {
-                return RedirectToAction(nameof(MirrorQuestions), new { accidentId = vm.AccidentId, role = vm.Role, index = 1 });
+                await SetStep(vm.AccidentId, vm.Role, "MirrorQuestions");
+
+                return RedirectToAction(nameof(MirrorQuestions), new
+                {
+                    accidentId = vm.AccidentId,
+                    role = vm.Role,
+                    index = 1
+                });
             }
 
             return RedirectToAction(nameof(Questions), new { accidentId = vm.AccidentId, role = vm.Role, index = next });
@@ -1124,12 +1353,16 @@ namespace Aoun.Controllers
 
             if (role != 1 && role != 2) return BadRequest("Role invalid.");
 
+            var reportRedirect = await RedirectIfReportExistsAsync(accidentId, role);
+            if (reportRedirect != null)
+                return reportRedirect;
+
             int i = index ?? 1;
 
             var vm = await _questionnaireService.GetMirrorQuestionAsync(accidentId, role, i);
             if (vm == null)
             {
-                TempData["JoinError"] = "لا توجد أسئلة Mirror في قاعدة البيانات.";
+                TempData["ToastError"] = "لا توجد أسئلة Mirror في قاعدة البيانات.";
                 return RedirectToAction("HomePage", "Home");
             }
 
@@ -1142,6 +1375,10 @@ namespace Aoun.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MirrorQuestions(QuestionsWizardViewModel vm, string nav)
         {
+            var reportRedirect = await RedirectIfReportExistsAsync(vm.AccidentId, vm.Role);
+            if (reportRedirect != null)
+                return reportRedirect;
+
             if (nav == "back")
             {
                 int prev = vm.Index - 1;
@@ -1228,6 +1465,13 @@ namespace Aoun.Controllers
         [HttpGet]
         public async Task<IActionResult> Reviewing(int accidentId, int role)
         {
+            if (role != 1 && role != 2)
+                return BadRequest("Role invalid.");
+
+            var reportRedirect = await RedirectIfReportExistsAsync(accidentId, role);
+            if (reportRedirect != null)
+                return reportRedirect;
+
             var accident = await _context.Accidents
                 .FirstOrDefaultAsync(a => a.AccidentId == accidentId);
 
@@ -1254,6 +1498,7 @@ namespace Aoun.Controllers
                 });
             }
 
+            await SetStep(accidentId, role, "FreeText");
             return RedirectToAction(nameof(FreeText), new { accidentId, role });
         }
         private async Task SetStep(int accidentId, int role, string step)
@@ -1279,12 +1524,16 @@ namespace Aoun.Controllers
         {
             if (role != 1 && role != 2) return BadRequest("Role invalid.");
 
+            var reportRedirect = await RedirectIfReportExistsAsync(accidentId, role);
+            if (reportRedirect != null)
+                return reportRedirect;
+
             int i = index ?? 1;
 
             var vm = await _conflictPackService.GetPackQuestionAsync(accidentId, role, packName, i);
             if (vm == null)
             {
-                TempData["JoinError"] = "لا توجد أسئلة لهذا الباك.";
+                TempData["ToastError"] = "لا توجد أسئلة لهذا الباك.";
                 return RedirectToAction(nameof(Reviewing), new { accidentId, role });
             }
 
@@ -1299,6 +1548,10 @@ namespace Aoun.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ConflictBack(ConflictBackWizardViewModel vm, string nav)
         {
+            var reportRedirect = await RedirectIfReportExistsAsync(vm.AccidentId, vm.Role);
+            if (reportRedirect != null)
+                return reportRedirect;
+
             if (nav == "back")
             {
                 int prev = vm.Index - 1;
@@ -1426,6 +1679,10 @@ namespace Aoun.Controllers
             if (role != 1 && role != 2)
                 return BadRequest("Role invalid.");
 
+            var reportRedirect = await RedirectIfReportExistsAsync(accidentId, role);
+            if (reportRedirect != null)
+                return reportRedirect;
+
             var currentUserId = GetCurrentUserId();
             if (currentUserId == null)
                 return RedirectToAction("Login", "Auth");
@@ -1441,7 +1698,7 @@ namespace Aoun.Controllers
 
             if (question == null)
             {
-                TempData["JoinError"] = "لم يتم العثور على سؤال FreeText في قاعدة البيانات.";
+                TempData["ToastError"] = "لم يتم العثور على سؤال FreeText في قاعدة البيانات.";
                 return RedirectToAction(nameof(Reviewing), new { accidentId, role });
             }
 
@@ -1470,6 +1727,10 @@ namespace Aoun.Controllers
             if (vm.Role != 1 && vm.Role != 2)
                 return BadRequest("Role invalid.");
 
+            var reportRedirect = await RedirectIfReportExistsAsync(vm.AccidentId, vm.Role);
+            if (reportRedirect != null)
+                return reportRedirect;
+
             var currentUserId = GetCurrentUserId();
             if (currentUserId == null)
                 return RedirectToAction("Login", "Auth");
@@ -1485,7 +1746,7 @@ namespace Aoun.Controllers
 
             if (question == null)
             {
-                TempData["JoinError"] = "تعذر حفظ النص الحر لعدم العثور على السؤال المرتبط.";
+                TempData["ToastError"] = "تعذر حفظ النص الحر لعدم العثور على السؤال المرتبط.";
                 return RedirectToAction(nameof(Reviewing), new { accidentId = vm.AccidentId, role = vm.Role });
             }
 
@@ -1522,6 +1783,8 @@ namespace Aoun.Controllers
             var ruleResult = await _liabilityRuleEngineService.EvaluateAsync(vm.AccidentId);
             await _liabilityRuleEngineService.SaveResultAsync(vm.AccidentId, ruleResult);
 
+            await SetStep(vm.AccidentId, vm.Role, "FinalResult");
+
             return RedirectToAction(nameof(FinalResult), new
             {
                 accidentId = vm.AccidentId,
@@ -1547,7 +1810,7 @@ namespace Aoun.Controllers
 
             if (report == null)
             {
-                TempData["JoinError"] = "لم يتم إنشاء التقرير بعد.";
+                TempData["ToastError"] = "لم يتم إنشاء التقرير بعد.";
                 return RedirectToAction(nameof(Reviewing), new { accidentId, role });
             }
 
@@ -1692,7 +1955,7 @@ namespace Aoun.Controllers
 
             await _context.SaveChangesAsync();
 
-            TempData["FeedbackSuccess"] = "تم إرسال تقييمك بنجاح. شكرًا لك.";
+            TempData["ToastSuccess"] = "تم إرسال تقييمك بنجاح. شكرًا لك.";
 
             return RedirectToAction(nameof(FeedbackSubmitted));
         }

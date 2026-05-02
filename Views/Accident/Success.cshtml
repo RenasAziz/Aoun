@@ -4,21 +4,22 @@
     Layout = "_Layout";
 }
 
-<section class="container py-4" style="max-width: 650px;">
+<section class="container py-4 success-page">
     <div class="text-center mb-3">
-        <img src="~/images/success.png" alt="Success" style="width:90px; height:auto;" />
+        <img src="~/images/success.png" alt="Success" class="success-icon" />
         <h3 class="fw-bold mt-3">تم قبول الحادث</h3>
         <p class="text-muted mb-0">يمكنك الآن مشاركة رمز الحادث مع السائق الآخر</p>
     </div>
 
-    <div class="card shadow-sm mb-3" style="border-radius: 16px;">
+    <div id="accidentCodeCard" class="card shadow-sm mb-3 success-card">
         <div class="card-body text-center">
             <div class="text-muted small mb-2">رقم الحادث</div>
 
             <div class="d-flex justify-content-center align-items-center gap-2">
-                <span class="fw-bold" style="font-size: 22px;">@Model.AccidentCode</span>
+                <span class="fw-bold accident-code-text">@Model.AccidentCode</span>
 
                 <button type="button"
+                        id="copyCodeButton"
                         class="btn btn-light border d-inline-flex align-items-center justify-content-center"
                         onclick="copyText('@Model.AccidentCode')"
                         aria-label="نسخ الكود"
@@ -29,34 +30,226 @@
         </div>
     </div>
 
-    <div class="card shadow-sm mb-4" style="border-radius: 16px;">
+    <div id="qrCard" class="card shadow-sm mb-3 success-card">
         <div class="card-body text-center">
             <div class="text-muted small mb-2">امسح الكود للمشاركة</div>
 
-            <!-- خيار 1: QR من خدمة خارجية (سريع) -->
             <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=@Model.AccidentCode"
                  alt="QR Code"
-                 style="width:220px; height:220px;" />
+                 class="qr-code-img" />
 
-            <!-- خيار 2 (أفضل لاحقًا): سوّي endpoint داخلي يولد QR -->
             @* <img src="@Url.Action("Qr","Accident", new { code = Model.AccidentCode })" alt="QR Code" /> *@
         </div>
     </div>
 
-    <a asp-controller="Accident"
-       asp-action="Waiting"
-       asp-route-accidentId="@Model.AccidentId"
-       asp-route-role="1"
-       class="hp-btn-confirm">
-        متابعة
-    </a>
+    <!-- Join timeout countdown -->
+    <div class="join-expiry-box text-center mb-3">
+        <div class="join-expiry-title">
+            مهلة انضمام الطرف الآخر
+        </div>
 
+        <div id="joinCountdown" class="join-countdown">
+            05:00
+        </div>
+
+        <div id="joinCountdownHint" class="join-countdown-hint">
+            يجب على الطرف الآخر الانضمام خلال هذه المهلة.
+        </div>
+
+        <div id="joinExpiredMessage" class="join-expired-message d-none">
+            انتهت مهلة الانضمام. يمكن إنشاء حادث جديد ومشاركة رمز جديد.
+        </div>
+    </div>
+
+    <!-- Waiting status inside Success page -->
+    <div id="waitingCard" class="card shadow-sm mb-4 success-card">
+        <div class="card-body text-center">
+            <div class="success-waiting-icon">
+                <i class="fa-solid fa-users-viewfinder"></i>
+            </div>
+
+            <h5 id="waitingTitle" class="success-waiting-title">
+                بانتظار انضمام الطرف الآخر
+            </h5>
+
+            <p id="waitingText" class="text-muted mb-0">
+                سيتم نقلك تلقائيًا إلى رفع الصور عند انضمام الطرف الآخر.
+            </p>
+
+            <div id="waitingLoader" class="success-waiting-loader mt-3">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </div>
+
+    <a asp-controller="Home"
+       asp-action="HomePage"
+       class="hp-btn-confirm success-home-link">
+        الرجوع للصفحة الرئيسية
+    </a>
 </section>
 
 <script>
     function copyText(text) {
         navigator.clipboard.writeText(text)
-            .then(() => alert("تم النسخ"))
-            .catch(() => alert("تعذر النسخ"));
+            .then(() => showLocalToast("success", "تم بنجاح", "تم نسخ رمز الحادث."))
+            .catch(() => showLocalToast("error", "تنبيه", "تعذر نسخ الرمز."));
     }
+
+    // Local toast helper for actions inside the same page.
+    // مساعد بسيط لإظهار Toast من داخل الصفحة.
+    function showLocalToast(type, title, message) {
+        if (typeof createAounToast === "function") {
+            createAounToast({
+                id: Date.now().toString() + Math.random().toString(16).slice(2),
+                type: type,
+                title: title,
+                message: message
+            });
+        } else {
+            alert(message);
+        }
+    }
+
+    // Remaining seconds comes from the server.
+    // الوقت المتبقي يأتي من الكنترولر حتى لا يبدأ العد من جديد عند تحديث الصفحة.
+    var remainingSeconds = @((ViewBag.JoinRemainingSeconds as int?) ?? 300);
+
+    var countdownElement = document.getElementById("joinCountdown");
+    var hintElement = document.getElementById("joinCountdownHint");
+    var expiredMessage = document.getElementById("joinExpiredMessage");
+    var qrCard = document.getElementById("qrCard");
+    var accidentCodeCard = document.getElementById("accidentCodeCard");
+    var copyCodeButton = document.getElementById("copyCodeButton");
+    var waitingCard = document.getElementById("waitingCard");
+    var waitingTitle = document.getElementById("waitingTitle");
+    var waitingText = document.getElementById("waitingText");
+    var waitingLoader = document.getElementById("waitingLoader");
+
+    var pollingTimer = null;
+    var countdownTimer = null;
+
+    function expireJoinUI() {
+        countdownElement.textContent = "00:00";
+        countdownElement.classList.add("expired");
+
+        if (hintElement) {
+            hintElement.classList.add("d-none");
+        }
+
+        if (expiredMessage) {
+            expiredMessage.classList.remove("d-none");
+        }
+
+        if (qrCard) {
+            qrCard.classList.add("expired-card");
+        }
+
+        if (accidentCodeCard) {
+            accidentCodeCard.classList.add("expired-card");
+        }
+
+        if (copyCodeButton) {
+            copyCodeButton.disabled = true;
+        }
+
+        if (waitingCard) {
+            waitingCard.classList.add("success-waiting-expired");
+        }
+
+        if (waitingTitle) {
+            waitingTitle.textContent = "انتهت مهلة الانتظار";
+        }
+
+        if (waitingText) {
+            waitingText.textContent = "لم ينضم الطرف الآخر خلال المهلة المحددة. يمكنك إنشاء حادث جديد.";
+        }
+
+        if (waitingLoader) {
+            waitingLoader.classList.add("d-none");
+        }
+
+        if (pollingTimer) {
+            clearInterval(pollingTimer);
+        }
+    }
+
+    function updateCountdown() {
+        var minutes = Math.floor(remainingSeconds / 60);
+        var seconds = remainingSeconds % 60;
+
+        countdownElement.textContent =
+            minutes.toString().padStart(2, "0") + ":" +
+            seconds.toString().padStart(2, "0");
+
+        if (remainingSeconds <= 0) {
+            clearInterval(countdownTimer);
+            expireJoinUI();
+            return;
+        }
+
+        remainingSeconds--;
+    }
+
+    async function checkWaitingStatus() {
+        try {
+            var response = await fetch("@Url.Action("WaitingStatus", "Accident", new { accidentId = Model.AccidentId })", {
+                method: "GET",
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            });
+
+            if (!response.ok) {
+                return;
+            }
+
+            var data = await response.json();
+
+            if (data.roomReady && data.redirectUrl) {
+                if (pollingTimer) {
+                    clearInterval(pollingTimer);
+                }
+
+                if (countdownTimer) {
+                    clearInterval(countdownTimer);
+                }
+
+                if (waitingTitle) {
+                    waitingTitle.textContent = "تم انضمام الطرف الآخر";
+                }
+
+                if (waitingText) {
+                    waitingText.textContent = "سيتم نقلك الآن إلى خطوة رفع الصور.";
+                }
+
+                setTimeout(function () {
+                    window.location.href = data.redirectUrl;
+                }, 800);
+
+                return;
+            }
+
+            if (data.expired && data.redirectUrl) {
+                expireJoinUI();
+
+                setTimeout(function () {
+                    window.location.href = data.redirectUrl;
+                }, 1500);
+
+                return;
+            }
+        } catch (error) {
+            // Silent retry.
+            // إعادة المحاولة بصمت في الجولة القادمة.
+        }
+    }
+
+    updateCountdown();
+    countdownTimer = setInterval(updateCountdown, 1000);
+
+    checkWaitingStatus();
+    pollingTimer = setInterval(checkWaitingStatus, 3000);
 </script>

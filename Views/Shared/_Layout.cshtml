@@ -134,6 +134,159 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
+   
+    <!-- Global System Toasts -->
+    <div class="aoun-toast-wrapper" id="aounToastWrapper"></div>
+
+    <script>
+        // Server-side TempData toasts
+        // رسائل TempData القادمة من الكنترولر
+        var serverToasts = [
+        @if (TempData["ToastSuccess"] != null)
+        {
+            <text>{
+                    type: "success",
+                    title: "تم بنجاح",
+                    message: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["ToastSuccess"]?.ToString()))
+                        }, </text>
+        }
+
+        @if (TempData["ToastError"] != null)
+        {
+            <text>{
+                    type: "error",
+                    title: "تنبيه",
+                    message: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["ToastError"]?.ToString()))
+                        }, </text>
+        }
+
+        @if (TempData["ToastWarning"] != null)
+        {
+            <text>{
+                    type: "warning",
+                    title: "ملاحظة",
+                    message: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["ToastWarning"]?.ToString()))
+                        }, </text>
+        }
+
+        @if (TempData["ToastInfo"] != null)
+        {
+            <text>{
+                    type: "info",
+                    title: "معلومة",
+                    message: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["ToastInfo"]?.ToString()))
+                        }, </text>
+        }
+            ];
+
+        function getToastIcon(type) {
+            if (type === "success") return "fa-solid fa-circle-check";
+            if (type === "error") return "fa-solid fa-circle-exclamation";
+            if (type === "warning") return "fa-solid fa-triangle-exclamation";
+            return "fa-solid fa-circle-info";
+        }
+
+        function getStoredToasts() {
+            try {
+                return JSON.parse(sessionStorage.getItem("aounToasts") || "[]");
+            } catch {
+                return [];
+            }
+        }
+
+        function saveStoredToasts(toasts) {
+            sessionStorage.setItem("aounToasts", JSON.stringify(toasts));
+        }
+
+        function addServerToastsToStorage() {
+            if (!serverToasts || serverToasts.length === 0) return;
+
+            var stored = getStoredToasts();
+
+            serverToasts.forEach(function (toast) {
+                if (!toast || !toast.message) return;
+
+                stored.push({
+                    id: Date.now().toString() + Math.random().toString(16).slice(2),
+                    type: toast.type,
+                    title: toast.title,
+                    message: toast.message,
+                    createdAt: Date.now()
+                });
+            });
+
+            saveStoredToasts(stored);
+        }
+
+        function removeStoredToast(id) {
+            var stored = getStoredToasts();
+            stored = stored.filter(function (toast) {
+                return toast.id !== id;
+            });
+            saveStoredToasts(stored);
+        }
+
+        function closeAounToast(button) {
+            var toast = button.closest("[data-toast]");
+            if (!toast) return;
+
+            var toastId = toast.getAttribute("data-toast-id");
+            if (toastId) {
+                removeStoredToast(toastId);
+            }
+
+            toast.classList.add("aoun-toast--hide");
+
+            setTimeout(function () {
+                toast.remove();
+            }, 250);
+        }
+
+        function createAounToast(toast) {
+            var wrapper = document.getElementById("aounToastWrapper");
+            if (!wrapper || !toast || !toast.message) return;
+
+            var toastElement = document.createElement("div");
+            toastElement.className = "aoun-toast aoun-toast--" + toast.type;
+            toastElement.setAttribute("data-toast", "");
+            toastElement.setAttribute("data-toast-id", toast.id);
+
+            toastElement.innerHTML =
+                '<div class="aoun-toast__icon">' +
+                '<i class="' + getToastIcon(toast.type) + '"></i>' +
+                '</div>' +
+                '<div class="aoun-toast__content">' +
+                '<div class="aoun-toast__title">' + toast.title + '</div>' +
+                '<div class="aoun-toast__message">' + toast.message + '</div>' +
+                '</div>' +
+                '<button type="button" class="aoun-toast__close" onclick="closeAounToast(this)">' +
+                '<i class="fa-solid fa-xmark"></i>' +
+                '</button>';
+
+            wrapper.appendChild(toastElement);
+
+            setTimeout(function () {
+                toastElement.classList.add("aoun-toast--hide");
+
+                setTimeout(function () {
+                    toastElement.remove();
+                    removeStoredToast(toast.id);
+                }, 250);
+            }, 4500);
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            addServerToastsToStorage();
+
+            var stored = getStoredToasts();
+
+            stored.forEach(function (toast) {
+                createAounToast(toast);
+            });
+        });
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

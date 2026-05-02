@@ -7,9 +7,6 @@
     <input type="hidden" asp-for="VehicleId" />
     <!-- Hidden field to send VehicleId back to controller -->
 
-    <input type="hidden" asp-for="DriverUserId" />
-    <!-- Hidden field to preserve DriverUserId relationship -->
-
     <div class="vehicle-form-card">
 
         <!-- Back arrow -->
@@ -19,6 +16,9 @@
         </a>
 
         <h4 class="text-center mb-4">تعديل بيانات مركبة</h4>
+
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+        <!-- Displays all validation errors, including duplicate plate errors -->
 
         <label>رقم اللّوحة</label>
         <input asp-for="LicensePlate" class="vehicle-input" />
@@ -32,7 +32,7 @@
         <span asp-validation-for="Model" class="text-danger"></span>
 
         <label>سنة التّصنيع</label>
-        <input asp-for="Year" type="number" class="vehicle-input"/>
+        <input asp-for="Year" type="number" class="vehicle-input" />
         <!-- Binds input to Year property -->
         <span asp-validation-for="Year" class="text-danger"></span>
 
@@ -47,11 +47,9 @@
 </form>
 
 <!---------------------------------------------------------------------------------------->
-
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
         <!-- Loads client-side validation scripts -->
     }
 }
-
