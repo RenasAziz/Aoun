@@ -13,18 +13,47 @@ using System.Text.Json;
 
 namespace Aoun.Controllers
 {
+    /// <summary>
+    /// AccidentController manages the complete driver accident workflow in Aoun.
+    /// يدير هذا الكنترولر مسار حادث السائقين بالكامل داخل نظام عون.
+    ///
+    /// Main responsibilities:
+    /// - Screening accident eligibility before creating a session.
+    /// - Creating the accident and registering the first driver.
+    /// - Allowing the second driver to join using an accident code.
+    /// - Handling photo upload, vehicle selection, questionnaires, conflict resolution, final result, and feedback.
+    ///
+    /// المسؤوليات الأساسية:
+    /// - التحقق من أهلية الحادث قبل إنشاء الجلسة.
+    /// - إنشاء الحادث وتسجيل السائق الأول.
+    /// - السماح للسائق الثاني بالانضمام باستخدام رمز الحادث.
+    /// - إدارة رفع الصور، اختيار المركبة، الأسئلة، حل التعارضات، النتيجة النهائية، والتقييم.
+    /// </summary>
     public class AccidentController : Controller
     {
+        // =========================================================
+        // Dependencies / الاعتماديات
+        // =========================================================
+        // EF Core database context used to access Aoun database tables.
+        // سياق قاعدة البيانات المستخدم للوصول إلى جداول نظام عون.
         private readonly AounDbContext _context;
 
+        // Business services used by the accident workflow.
+        // خدمات منطق الأعمال المستخدمة داخل مسار الحادث.
         private readonly QuestionnaireService _questionnaireService;
         private readonly ConflictService _conflictService;
         private readonly ConflictPackService _conflictPackService;
         private readonly LiabilityRuleEngineService _liabilityRuleEngineService;
         private readonly IHttpClientFactory _httpClientFactory;
 
+        // Fixed database code for the optional free-text question.
+        // كود ثابت للسؤال النصي الاختياري المخزن في قاعدة البيانات.
         private const string FreeTextQuestionCode = "FREE_TEXT_ACCIDENT_DESC";
 
+        /// <summary>
+        /// Injects the database context and all services needed by the accident workflow.
+        /// يحقن سياق قاعدة البيانات والخدمات اللازمة لتشغيل مسار الحادث.
+        /// </summary>
         public AccidentController(
            AounDbContext context,
            QuestionnaireService questionnaireService,
@@ -42,8 +71,14 @@ namespace Aoun.Controllers
         }
 
         // =========================================================
-        // Session / Participant Helpers
+        // Session and Participant Helpers
+        // مساعدات الجلسة والمشاركين
         // =========================================================
+        // These helper methods centralize access to the currently logged-in user
+        // and the driver's role inside a specific accident session.
+        // هذه الدوال تجمع منطق الوصول للمستخدم الحالي ودوره داخل جلسة حادث محددة.
+        // Reads the logged-in user id from session.
+        // يقرأ رقم المستخدم الحالي من الجلسة.
         private int? GetCurrentUserId()
         {
             return HttpContext.Session.GetInt32("UserId");
@@ -77,8 +112,13 @@ namespace Aoun.Controllers
         }
 
         // =========================================================
-        // 1) Screening
+        // 1) Accident Eligibility Screening
+        // ١) فحص أهلية الحادث
         // =========================================================
+        // This step prevents unsupported cases from entering the automated workflow,
+        // such as accidents with injuries, more than two vehicles, missing parties, or invalid insurance.
+        // هذه الخطوة تمنع الحالات غير المدعومة من دخول المسار الآلي،
+        // مثل وجود إصابات، أكثر من مركبتين، غياب أحد الأطراف، أو عدم وجود تأمين صالح.
         [HttpGet]
         public IActionResult Screening()
         {
@@ -92,6 +132,8 @@ namespace Aoun.Controllers
             if (!ModelState.IsValid)
                 return View(vm);
 
+            // The accident is rejected if it falls outside the supported minor-accident scope.
+            // يتم رفض الحادث إذا خرج عن نطاق الحوادث البسيطة المدعومة في النظام.
             bool reject =
                 vm.HasInjuries == true ||
                 vm.VehiclesCount != "Two" ||
@@ -108,8 +150,13 @@ namespace Aoun.Controllers
         }
 
         // =========================================================
-        // 2) Location (Create Accident)
+        // 2) Location and Accident Creation
+        // ٢) تحديد الموقع وإنشاء الحادث
         // =========================================================
+        // This section receives the accident location, date, and time from the UI,
+        // then creates the accident record and registers the logged-in driver as Driver 1.
+        // يستقبل هذا الجزء موقع الحادث والتاريخ والوقت من الواجهة،
+        // ثم ينشئ سجل الحادث ويسجل المستخدم الحالي كسائق أول.
         [AuthorizeUser]
         [HttpGet]
         public IActionResult Location()
@@ -125,6 +172,8 @@ namespace Aoun.Controllers
             if (!ModelState.IsValid)
                 return View(vm);
 
+            // The date/time values come from hidden inputs in the UI, so they are parsed explicitly.
+            // تأتي قيم التاريخ والوقت من حقول مخفية في الواجهة، لذلك يتم تحليلها بشكل صريح.
             if (!DateOnly.TryParseExact(vm.AccidentDateIso, "yyyy-MM-dd", CultureInfo.InvariantCulture,
                     DateTimeStyles.None, out var date))
             {
@@ -139,6 +188,8 @@ namespace Aoun.Controllers
                 return View(vm);
             }
 
+            // The system allows manual location selection, but it should not create an accident without a location.
+            // يسمح النظام بتحديد الموقع يدويًا، لكن لا يجب إنشاء حادث بدون موقع.
             if (string.IsNullOrWhiteSpace(vm.LocationText))
             {
                 ModelState.AddModelError("LocationText", "يرجى تحديد موقع الحادث أو إدخاله يدويًا.");
@@ -160,6 +211,8 @@ namespace Aoun.Controllers
                 Longitude = vm.Longitude.HasValue ? Convert.ToDecimal(vm.Longitude.Value) : null
             };
 
+            // Save the accident first to generate AccidentId, then use it to register the creator as Driver 1.
+            // نحفظ الحادث أولاً لتوليد رقم الحادث، ثم نستخدمه لتسجيل المنشئ كسائق أول.
             _context.Accidents.Add(accident);
             await _context.SaveChangesAsync();
 
@@ -189,8 +242,13 @@ namespace Aoun.Controllers
         }
 
         // =========================================================
-        // 3) Success (Shows Code + QR)
+        // 3) Success Page: Accident Code, QR, and Join Timer
+        // ٣) صفحة النجاح: رمز الحادث، QR، ومؤقت الانضمام
         // =========================================================
+        // The creator sees the accident code and QR code here.
+        // The remaining join time is calculated on the server to prevent timer reset after refresh.
+        // يرى منشئ الحادث رمز الحادث ورمز QR هنا.
+        // يتم حساب الوقت المتبقي من الخادم حتى لا يبدأ المؤقت من جديد عند تحديث الصفحة.
         [AuthorizeUser]
         [HttpGet]
         public async Task<IActionResult> Success(int accidentId)
@@ -232,8 +290,13 @@ namespace Aoun.Controllers
         }
 
         // =========================================================
-        // 4) Waiting Page + Polling API
+        // 4) Waiting and Polling
+        // ٤) الانتظار والتحديث التلقائي
         // =========================================================
+        // WaitingStatus is called by JavaScript polling to check whether both drivers joined.
+        // It also expires the accident if the second driver does not join within the allowed time.
+        // يتم استدعاء WaitingStatus من JavaScript للتحقق من انضمام الطرفين.
+        // كما ينهي صلاحية الحادث إذا لم ينضم الطرف الثاني خلال المهلة المحددة.
         [AuthorizeUser]
         [HttpGet]
         public async Task<IActionResult> Waiting(int accidentId, int role)
@@ -377,8 +440,11 @@ namespace Aoun.Controllers
         }
 
         // =========================================================
-        // 5) Join UI Page (Enter Code / Scan QR)
+        // 5) Join Page
+        // ٥) صفحة الانضمام
         // =========================================================
+        // Displays the page where the second driver enters the accident code or scans the QR code.
+        // تعرض الصفحة التي يستخدمها الطرف الثاني لإدخال رمز الحادث أو مسح رمز QR.
         [AuthorizeUser]
         [HttpGet]
         public IActionResult Join()
@@ -387,8 +453,13 @@ namespace Aoun.Controllers
         }
 
         // =========================================================
-        // 6) JoinByCode (POST) - used by manual code and QR redirect
+        // 6) Join by Accident Code
+        // ٦) الانضمام باستخدام رمز الحادث
         // =========================================================
+        // This action validates the accident code, checks expiry/completion rules,
+        // prevents third-party access, and resumes already registered drivers from their current step.
+        // يتحقق هذا الإجراء من رمز الحادث، وقواعد الانتهاء أو الاكتمال،
+        // ويمنع دخول طرف ثالث، كما يعيد السائق المسجل سابقًا إلى خطوته الحالية.
         [AuthorizeUser]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -429,6 +500,8 @@ namespace Aoun.Controllers
             var existingParticipant = await _context.AccidentSessionParticipants
                 .FirstOrDefaultAsync(p => p.AccidentId == accidentId && p.DriverUserId == driverUserId);
 
+            // If a report already exists, the workflow is complete and should not return to questions.
+            // إذا كان التقرير موجودًا، فهذا يعني أن المسار اكتمل ولا يجب الرجوع للأسئلة.
             var existingReport = await _context.AccidentReports
                 .FirstOrDefaultAsync(r => r.AccidentId == accidentId);
 
@@ -459,6 +532,8 @@ namespace Aoun.Controllers
                 return RedirectToAction("Join");
             }
 
+            // Existing participants are not treated as new joiners; they are resumed from their saved step.
+            // المشاركون الموجودون سابقًا لا يعاملون كمنضمين جدد؛ بل يتم إعادتهم إلى خطوتهم المحفوظة.
             if (existingParticipant != null)
             {
                 if (accident.Status != "فعال")
@@ -513,8 +588,11 @@ namespace Aoun.Controllers
             return RedirectToAction("JoinSuccess", new { accidentId = accidentId });
         }
         // =========================================================
-        // 7) Join Success Page (Shows accident details + role)
+        // 7) Join Success
+        // ٧) نجاح الانضمام
         // =========================================================
+        // Shows the joined driver basic accident details and their assigned role.
+        // يعرض للطرف المنضم بيانات الحادث الأساسية والدور المخصص له.
         [AuthorizeUser]
         [HttpGet]
         public async Task<IActionResult> JoinSuccess(int accidentId)
@@ -550,8 +628,15 @@ namespace Aoun.Controllers
         }
 
         // =========================================================
-        // Helpers
+        // Navigation and Workflow Helpers
+        // مساعدات التنقل ومسار العمل
         // =========================================================
+        // These helpers keep routing decisions consistent across the controller,
+        // especially when resuming an interrupted accident session.
+        // تساعد هذه الدوال في توحيد قرارات الانتقال بين الصفحات،
+        // خصوصًا عند استكمال جلسة حادث لم تكتمل سابقًا.
+        // Extracts the numeric accident id from codes like ACC-000132 or ACC-2024-00856.
+        // يستخرج رقم الحادث من صيغ مثل ACC-000132 أو ACC-2024-00856.
         private static int ExtractAccidentId(string code)
         {
             if (string.IsNullOrWhiteSpace(code)) return 0;
@@ -567,6 +652,8 @@ namespace Aoun.Controllers
         }
 
 
+        // Redirects a returning participant to the last saved workflow step.
+        // يعيد المشارك العائد إلى آخر خطوة محفوظة في مسار الحادث.
         private IActionResult RedirectToCurrentStep(AccidentSessionParticipant participant)
         {
             int accidentId = participant.AccidentId;
@@ -593,6 +680,8 @@ namespace Aoun.Controllers
             };
         }
 
+        // Prevents access to old workflow pages after the report has already been generated.
+        // يمنع الرجوع لصفحات الخطوات القديمة بعد إنشاء التقرير.
         private async Task<IActionResult?> RedirectIfReportExistsAsync(int accidentId, int role)
         {
             if (role != 1 && role != 2)
@@ -629,8 +718,11 @@ namespace Aoun.Controllers
         }
 
         // =========================================================
-        // Upload Photos (GET)
+        // 8) Upload Photos - Display Page
+        // ٨) رفع الصور - عرض الصفحة
         // =========================================================
+        // The upload page is only available after both drivers join the same accident session.
+        // لا تظهر صفحة رفع الصور إلا بعد انضمام الطرفين إلى نفس جلسة الحادث.
         [AuthorizeUser]
         [HttpGet]
         public async Task<IActionResult> UploadPhotos(int accidentId, int role)
@@ -659,8 +751,13 @@ namespace Aoun.Controllers
         }
 
         // =========================================================
-        // Upload Photos (POST)
+        // 9) Upload Photos - Validation, Storage, and AI Processing
+        // ٩) رفع الصور - التحقق، الحفظ، والتحليل الآلي
         // =========================================================
+        // This action validates required and optional images, stores them,
+        // then calls the classification and segmentation FastAPI services when damage photos exist.
+        // يتحقق هذا الإجراء من الصور المطلوبة والاختيارية، ويحفظها،
+        // ثم يستدعي خدمات التصنيف والتقسيم في FastAPI عند وجود صور ضرر.
         [AuthorizeUser]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -699,6 +796,8 @@ namespace Aoun.Controllers
             int role = participant.Role;
             int driverUserId = currentUserId.Value;
 
+            // Required images are mandatory evidence for both vehicles and the accident scene.
+            // الصور المطلوبة تمثل أدلة أساسية للمركبة وموقع الحادث.
             var requiredFiles = new Dictionary<string, (IFormFile? File, string DisplayName)>
             {
                 { "Front", (vm.FrontPhoto, "صورة الواجهة الأمامية") },
@@ -709,6 +808,8 @@ namespace Aoun.Controllers
                 { "Scene", (vm.ScenePhoto, "صورة عامة لموقع الحادث") }
             };
 
+            // Damage photos are optional because not every accident has visible damage photos uploaded by the driver.
+            // صور الضرر اختيارية لأن السائق قد لا يرفع صور ضرر ظاهرة في كل حادث.
             var optionalFiles = new Dictionary<string, (IFormFile? File, string DisplayName)>
             {
                 { "Damage1", (vm.DamagePhoto1, "صورة الضرر الأولى") },
@@ -717,6 +818,8 @@ namespace Aoun.Controllers
             string? damage1Url = null;
             string? damage2Url = null;
 
+            // Validate required images before saving any files to avoid partial uploads.
+            // نتحقق من الصور المطلوبة قبل حفظ أي ملف لتجنب الرفع الجزئي.
             foreach (var kv in requiredFiles)
             {
                 var file = kv.Value.File;
@@ -773,6 +876,8 @@ namespace Aoun.Controllers
 
             var labels = allFiles.Keys.ToList();
 
+            // Replace existing images for the same driver and labels to keep the latest upload only.
+            // نستبدل الصور القديمة لنفس السائق ونفس التصنيفات حتى تبقى آخر نسخة مرفوعة فقط.
             var oldImages = await _context.Images
                 .Where(i => i.AccidentId == vm.AccidentId
                             && i.DriverUserId == driverUserId
@@ -860,6 +965,8 @@ namespace Aoun.Controllers
                     i.ImagePath == damage2Url);
             }
 
+            // Run damage-side classification for the first optional damage image.
+            // يتم تشغيل تصنيف جهة الضرر لصورة الضرر الاختيارية الأولى.
             if (damage1Image != null && !string.IsNullOrWhiteSpace(damage1Url))
             {
                 var physicalPath1 = Path.Combine(
@@ -879,6 +986,8 @@ namespace Aoun.Controllers
                 }
             }
 
+            // Run damage-side classification for the second optional damage image.
+            // يتم تشغيل تصنيف جهة الضرر لصورة الضرر الاختيارية الثانية.
             if (damage2Image != null && !string.IsNullOrWhiteSpace(damage2Url))
             {
                 var physicalPath2 = Path.Combine(
@@ -898,6 +1007,8 @@ namespace Aoun.Controllers
                 }
             }
 
+            // Run segmentation/detection for the first damage image to identify damage regions and labels.
+            // يتم تشغيل التقسيم/الكشف للصورة الأولى لتحديد مناطق وأنواع الضرر.
             if (damage1Image != null && !string.IsNullOrWhiteSpace(damage1Url))
             {
                 var physicalPath1 = Path.Combine(
@@ -920,6 +1031,8 @@ namespace Aoun.Controllers
                 }
             }
 
+            // Run segmentation/detection for the second damage image to identify damage regions and labels.
+            // يتم تشغيل التقسيم/الكشف للصورة الثانية لتحديد مناطق وأنواع الضرر.
             if (damage2Image != null && !string.IsNullOrWhiteSpace(damage2Url))
             {
                 var physicalPath2 = Path.Combine(
@@ -952,16 +1065,25 @@ namespace Aoun.Controllers
         }
 
         // =========================================================
-        // Helpers (Images)
+        // Image Helpers and AI Service Calls
+        // مساعدات الصور واستدعاءات خدمات الذكاء الاصطناعي
         // =========================================================
+        // These methods validate images, save files safely, and call external AI APIs with error handling.
+        // هذه الدوال تتحقق من الصور، تحفظ الملفات بشكل آمن، وتستدعي خدمات الذكاء الاصطناعي مع معالجة الأخطاء.
 
+        // Maximum file size accepted for each uploaded image.
+        // الحد الأقصى لحجم كل صورة مرفوعة.
         private const long MaxImageSizeBytes = 5 * 1024 * 1024; // 5 MB
+        // Checks the uploaded file extension against the allowed image formats.
+        // يتحقق من امتداد الملف المرفوع مقارنة بصيغ الصور المسموحة.
         private static bool IsAllowedImage(IFormFile file)
         {
             var ext = Path.GetExtension(file.FileName)?.ToLowerInvariant();
             return ext == ".jpg" || ext == ".jpeg" || ext == ".png";
         }
 
+        // Saves the uploaded image under wwwroot/uploads using a stable accident/driver folder structure.
+        // يحفظ الصورة المرفوعة داخل wwwroot/uploads باستخدام هيكلة ثابتة حسب الحادث والسائق.
         private static async Task<string?> SaveImageAsync(IFormFile file, int accidentId, int role, string fileBaseName)
         {
             try
@@ -988,6 +1110,8 @@ namespace Aoun.Controllers
             }
         }
 
+        // Calls the FastAPI classification endpoint to predict the damage side: front, back, or side.
+        // يستدعي نقطة التصنيف في FastAPI لتحديد جهة الضرر: أمامي، خلفي، أو جانبي.
         private async Task<SinglePredictionResponse?> PredictSingleImageAsync(string physicalPath)
         {
             if (!System.IO.File.Exists(physicalPath))
@@ -1072,6 +1196,8 @@ namespace Aoun.Controllers
             }
         }
 
+        // Calls the FastAPI segmentation/detection endpoint to detect visible damage and return mask/labels.
+        // يستدعي نقطة التقسيم/الكشف في FastAPI لاكتشاف الضرر الظاهر وإرجاع الصورة والأنواع.
         private async Task<SegmentationPredictionResponse?> PredictSegmentationAsync(string physicalPath)
         {
             if (!System.IO.File.Exists(physicalPath))
@@ -1156,6 +1282,8 @@ namespace Aoun.Controllers
             }
         }
 
+        // Stores segmentation detection labels in the database and replaces old detections for the same image.
+        // يحفظ أنواع الضرر المكتشفة في قاعدة البيانات ويستبدل النتائج القديمة لنفس الصورة.
         private async Task SaveSegmentationDetectionsAsync(Image image, SegmentationPredictionResponse segmentation)
         {
             var oldDetections = await _context.ImageSegmentationDetections
@@ -1183,8 +1311,11 @@ namespace Aoun.Controllers
             await _context.SaveChangesAsync();
         }
         // =========================================================
-        // Select Vehicle
+        // 10) Select or Add Vehicle
+        // ١٠) اختيار أو إضافة المركبة
         // =========================================================
+        // Each driver must select the vehicle involved in the accident before answering liability questions.
+        // يجب على كل سائق اختيار المركبة المرتبطة بالحادث قبل الإجابة على أسئلة تحديد المسؤولية.
         [AuthorizeUser]
         [HttpGet]
         public async Task<IActionResult> SelectVehicle(int accidentId, int role)
@@ -1202,6 +1333,8 @@ namespace Aoun.Controllers
             if (participant == null)
                 return RedirectToAction("Waiting", new { accidentId, role });
 
+            // Load only vehicles owned by the current logged-in driver.
+            // يتم تحميل مركبات المستخدم الحالي فقط.
             var vehicles = await _context.Vehicles
                 .Where(v => v.DriverUserId == currentUserId.Value)
                 .OrderByDescending(v => v.VehicleId)
@@ -1264,6 +1397,8 @@ namespace Aoun.Controllers
             participant.VehicleId = vm.SelectedVehicleId;
             vm.Role = participant.Role;
 
+            // Link the selected vehicle to the accident if the relationship does not already exist.
+            // نربط المركبة المختارة بالحادث إذا لم تكن العلاقة موجودة مسبقًا.
             bool involveExists = await _context.Involves
                 .AnyAsync(i => i.AccidentId == vm.AccidentId
                             && i.VehicleId == vm.SelectedVehicleId);
@@ -1310,6 +1445,8 @@ namespace Aoun.Controllers
 
             // Normalize plate before checking duplicate.
             // توحيد صيغة اللوحة قبل فحص التكرار.
+            // Normalize the license plate to prevent duplicates caused by letter casing or extra spaces.
+            // نوحد صيغة اللوحة لمنع التكرار بسبب اختلاف الحروف أو المسافات.
             var normalizedPlate = vm.NewLicensePlate.Trim().ToUpper();
 
             bool plateExists = await _context.Vehicles
@@ -1339,8 +1476,11 @@ namespace Aoun.Controllers
         }
 
         // =========================================================
-        // Questions
+        // 11) Core Questions
+        // ١١) الأسئلة الأساسية
         // =========================================================
+        // Core questions collect each driver's own description of the accident circumstances.
+        // تجمع الأسئلة الأساسية وصف كل سائق لظروف الحادث من وجهة نظره.
         [AuthorizeUser]
         [HttpGet]
         public async Task<IActionResult> Questions(int accidentId, int role, int? index)
@@ -1393,6 +1533,8 @@ namespace Aoun.Controllers
 
             await _questionnaireService.SaveAnswerAsync(vm.AccidentId, vm.Role, vm.QuestionId, vm.SelectedOptionCode!);
 
+            // CQ6 affects the routing logic; if the other driver has not answered it yet, wait before continuing.
+            // سؤال CQ6 يؤثر على مسار الأسئلة؛ إذا لم يجب الطرف الآخر عليه بعد، ننتظر قبل المتابعة.
             if (string.Equals(vm.QuestionCode, "CQ6", StringComparison.OrdinalIgnoreCase))
             {
                 int otherRole = vm.Role == 1 ? 2 : 1;
@@ -1490,8 +1632,11 @@ namespace Aoun.Controllers
         }
 
         // =========================================================
-        // MirrorQuestions Wizard
+        // 12) Mirror Questions
+        // ١٢) أسئلة التحقق
         // =========================================================
+        // Mirror questions ask each driver about the other party to help detect contradictions.
+        // تسأل أسئلة التحقق كل سائق عن الطرف الآخر للمساعدة في اكتشاف التناقضات.
         [AuthorizeUser]
         [HttpGet]
         public async Task<IActionResult> MirrorQuestions(int accidentId, int role, int? index)
@@ -1582,12 +1727,14 @@ namespace Aoun.Controllers
         [HttpGet]
         public async Task<IActionResult> MirrorDoneStatus(int accidentId, int role)
         {
+            // A driver is considered done with mirror questions if they reached MirrorDone or any later step.
+            // يعتبر السائق منتهيًا من أسئلة التحقق إذا وصل إلى MirrorDone أو أي خطوة بعدها.
             var completedMirrorSteps = new[]
             {
-        "MirrorDone",
-        "FreeText",
-        "FinalResult"
-    };
+                "MirrorDone",
+                "FreeText",
+                "FinalResult"
+            };
 
             bool bothDone = await _context.AccidentSessionParticipants
                 .Where(p => p.AccidentId == accidentId && p.IsJoined)
@@ -1600,6 +1747,14 @@ namespace Aoun.Controllers
             });
         }
 
+        // =========================================================
+        // 13) Conflict Back Questions
+        // ١٣) أسئلة الرجوع عند وجود تعارض
+        // =========================================================
+        // If contradictions are detected, the system asks additional pack-based questions
+        // to clarify the conflicting answers before generating the final rule-based result.
+        // إذا تم اكتشاف تعارضات، يطرح النظام أسئلة إضافية مجمعة حسب نوع التعارض
+        // لتوضيح الإجابات المتضاربة قبل توليد نتيجة القواعد النهائية.
         [AuthorizeUser]
         [HttpGet]
         public IActionResult ConflictBackEntry(int accidentId, int role, string packName)
@@ -1632,6 +1787,8 @@ namespace Aoun.Controllers
 
             if (accident == null) return NotFound();
 
+            // Conflict detection is executed once unless conflicts already exist for this accident.
+            // يتم تشغيل اكتشاف التعارضات مرة واحدة ما لم تكن التعارضات موجودة مسبقًا لهذا الحادث.
             bool hasExistingConflicts = await _context.AccidentConflicts
                 .AnyAsync(c => c.AccidentId == accidentId);
 
@@ -1656,6 +1813,8 @@ namespace Aoun.Controllers
             await SetStep(accidentId, role, "FreeText");
             return RedirectToAction(nameof(FreeText), new { accidentId, role });
         }
+        // Saves the current workflow step for resume support.
+        // يحفظ الخطوة الحالية لدعم استكمال المسار لاحقًا.
         private async Task SetStep(int accidentId, int role, string step)
         {
             var currentUserId = GetCurrentUserId();
@@ -1825,8 +1984,13 @@ namespace Aoun.Controllers
         }
 
         // =========================================================
-        // FreeText Page (Optional)
+        // 14) Free Text and Rule Engine Result
+        // ١٤) النص الحر ونتيجة محرك القواعد
         // =========================================================
+        // The optional free-text description is saved, then the liability rule engine evaluates the accident
+        // and stores the preliminary report result.
+        // يتم حفظ الوصف النصي الاختياري، ثم يقوم محرك قواعد المسؤولية بتقييم الحادث
+        // وحفظ نتيجة التقرير الأولي.
         [AuthorizeUser]
         [HttpGet]
         public async Task<IActionResult> FreeText(int accidentId, int role)
@@ -1935,6 +2099,8 @@ namespace Aoun.Controllers
 
             await _context.SaveChangesAsync();
 
+            // After saving the final narrative, evaluate liability using the expert rule engine.
+            // بعد حفظ الوصف النهائي، يتم تقييم المسؤولية باستخدام محرك القواعد الخبير.
             var ruleResult = await _liabilityRuleEngineService.EvaluateAsync(vm.AccidentId);
             await _liabilityRuleEngineService.SaveResultAsync(vm.AccidentId, ruleResult);
 
@@ -1947,6 +2113,14 @@ namespace Aoun.Controllers
             });
         }
 
+        // =========================================================
+        // 15) Final Result
+        // ١٥) النتيجة النهائية
+        // =========================================================
+        // Builds the final result view model using the saved report, accident information,
+        // damage image predictions, segmentation outputs, and conflict status.
+        // يبني نموذج عرض النتيجة النهائية بالاعتماد على التقرير المحفوظ، وبيانات الحادث،
+        // ونتائج تصنيف صور الضرر، ومخرجات التقسيم، وحالة التعارضات.
         [AuthorizeUser]
         [HttpGet]
         public async Task<IActionResult> FinalResult(int accidentId, int role)
@@ -1973,6 +2147,8 @@ namespace Aoun.Controllers
             if (currentUserId == null)
                 return RedirectToAction("Login", "Auth");
 
+            // Load only the current driver's damage images to display their own AI results.
+            // نحمل صور الضرر الخاصة بالسائق الحالي فقط لعرض نتائج التحليل الخاصة به.
             var damageImages = await _context.Images
                 .Include(i => i.ImageSegmentationDetections)
                 .Where(i => i.AccidentId == accidentId
@@ -2031,8 +2207,11 @@ namespace Aoun.Controllers
             return View(vm);
         }
         // =========================================================
-        // Feedback
+        // 16) Driver Feedback
+        // ١٦) تقييم السائق
         // =========================================================
+        // Drivers can submit their satisfaction level and comment after viewing the final result.
+        // يستطيع السائق إرسال مستوى الرضا والتعليق بعد مشاهدة النتيجة النهائية.
         [AuthorizeUser]
         [HttpGet]
         public async Task<IActionResult> Feedback(int accidentId, int role)
@@ -2085,6 +2264,8 @@ namespace Aoun.Controllers
             if (accident == null)
                 return NotFound();
 
+            // If feedback already exists, update it instead of creating duplicate feedback for the same accident and driver.
+            // إذا كان التقييم موجودًا مسبقًا، يتم تحديثه بدل إنشاء تقييم مكرر لنفس الحادث والسائق.
             var feedback = await _context.DriverFeedbacks
                 .FirstOrDefaultAsync(f => f.AccidentId == vm.AccidentId && f.DriverUserId == currentUserId.Value);
 
