@@ -75,20 +75,18 @@ namespace Aoun.Services
             var context = await BuildContextAsync(accidentId);
 
             var result =
-                   TryEvaluateR2(context)
-                ?? TryEvaluateR3(context)
-                ?? TryEvaluateR4(context)
-                ?? TryEvaluateR1(context)
-                ?? TryEvaluateR10(context)
-                ?? TryEvaluateR11(context)
-                ?? TryEvaluateR12(context)
-                ?? TryEvaluateR5(context)
-                ?? TryEvaluateR9(context)
-                ?? TryEvaluateR7(context)
-                ?? TryEvaluateR8(context)
-                ?? BuildFallbackResult(context);
-
-            ApplyConfidence(result, context);
+        TryEvaluateR2(context)
+     ?? TryEvaluateR3(context)
+     ?? TryEvaluateR4(context)
+     ?? TryEvaluateR9(context)
+     ?? TryEvaluateR1(context)
+     ?? TryEvaluateR10(context)
+     ?? TryEvaluateR11(context)
+     ?? TryEvaluateR12(context)
+     ?? TryEvaluateR5(context)
+     ?? TryEvaluateR7(context)
+     ?? TryEvaluateR8(context)
+     ?? BuildFallbackResult(context);
 
             return result;
         }
