@@ -13,10 +13,11 @@
         <div class="join__label">باستخدام رمز الحادث</div>
 
 
-        <form asp-controller="Accident" asp-action="JoinByCode" method="post" class="join__form">
+        <form id="joinForm" asp-controller="Accident" asp-action="JoinByCode" method="post" class="join__form">
             @Html.AntiForgeryToken()
 
             <input type="text"
+                   id="codeInput"
                    name="code"
                    class="join__input"
                    placeholder="ACC-2024-00856"
@@ -36,6 +37,8 @@
             <img class="join__qrIcon" src="~/images/barcode.png" alt="QR" />
         </div>
 
+        <div id="reader" style="width:100%; margin-top:16px; display:none;"></div>
+
         <button type="button" class="join__btnPrimary" onclick="openScanner()">
             فتح الكاميرا لمسح QR
         </button>
@@ -47,9 +50,55 @@
 </section>
 
 @section Scripts {
+
+    <script src="https://unpkg.com/html5-qrcode"></script>
+
     <script>
+
+        let html5QrCode;
+        let hasScanned = false;
+
         function openScanner() {
-            alert("قريبًا: ماسح QR");
+
+            const reader = document.getElementById("reader");
+
+            reader.style.display = "block";
+
+            html5QrCode = new Html5Qrcode("reader");
+
+            html5QrCode.start(
+                { facingMode: "environment" },
+                {
+                    fps: 10,
+                    qrbox: 250,
+                    rememberLastUsedCamera: true
+                },
+                onScanSuccess
+            ).catch(err => {
+                console.error(err);
+                alert("تعذر فتح الكاميرا");
+            });
         }
+
+        function onScanSuccess(decodedText) {
+
+            if (hasScanned) return;
+
+            hasScanned = true;
+
+            // Fill the input automatically
+            document.getElementById("codeInput").value = decodedText;
+
+            // Stop scanner
+            html5QrCode.stop().then(() => {
+
+                document.getElementById("reader").style.display = "none";
+
+                // Submit form automatically
+                document.getElementById("joinForm").submit();
+
+            }).catch(err => console.error(err));
+        }
+
     </script>
 }

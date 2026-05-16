@@ -2,6 +2,7 @@
 
 @{
     ViewData["Title"] = "تفاصيل التقرير";
+    Layout = "_AdminLayout";
     var hasExtraTab = Model.Conflicts.Any() || Model.ConflictBackAnswers.Any();
 
     var party1All = Model.Party1Images ?? new List<Aoun.ViewModels.InspectorImageItemViewModel>();
