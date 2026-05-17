@@ -6720,3 +6720,44 @@ i[class^="fa"], i[class*=" fa"],
     opacity: 0.90;
     cursor: not-allowed;
 }
+
+.up__heroIconWrap {
+    width: 86px;
+    height: 86px;
+    border-radius: 50%;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 8px auto 12px;
+    box-shadow: 0 10px 20px rgba(0,0,0,.08);
+}
+
+.up__heroIcon {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: #eaf6ee;
+    color: #0a3b1e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+}
+
+.qz__heroIconWrap {
+    width: 86px;
+    height: 86px;
+    border-radius: 50%;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 8px auto 10px;
+    box-shadow: 0 10px 20px rgba(0,0,0,.08);
+}
+
+.qz__heroIcon {
+    font-size: 38px;
+    color: #0a3b1e;
+}

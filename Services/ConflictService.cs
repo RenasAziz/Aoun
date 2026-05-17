@@ -61,6 +61,11 @@ namespace Aoun.Services
             DetectIntersection(accidentId, d1, d2, conflicts);
             DetectOvertake(accidentId, d1, d2, conflicts);
 
+            conflicts = conflicts
+    .GroupBy(c => new { c.AccidentId, c.ConflictType })
+    .Select(g => g.First())
+    .ToList();
+
             var oldConflicts = await _db.AccidentConflicts
                 .Where(c => c.AccidentId == accidentId)
                 .ToListAsync();

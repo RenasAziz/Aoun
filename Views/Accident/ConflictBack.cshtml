@@ -6,9 +6,13 @@
 
 <section class="qz">
     <div class="qz__top">
+        <div class="qz__heroIconWrap">
+            <i class="fa-solid fa-shield-halved qz__heroIcon"></i>
+        </div>
+
+        <div class="qz__step">@Model.Index من @Model.Total</div>
         <h2 class="qz__title">أسئلة التحقق الإضافية</h2>
         <div class="qz__sub">يرجى الإجابة بدقة لاستكمال تحليل الحادث</div>
-        <div class="qz__step">@Model.Index من @Model.Total</div>
     </div>
 
     <form asp-action="ConflictBack" asp-controller="Accident" method="post" class="qz__card">
@@ -22,13 +26,16 @@
         <input type="hidden" asp-for="Index" />
         <input type="hidden" asp-for="Total" />
 
-        <div class="qz__q">@Model.QuestionTextAr</div>
+        <div class="qz__q">
+            @Model.QuestionTextAr
+            <span class="qz__req">*</span>
+        </div>
 
-        <div class="text-danger mt-2">
+        <div class="qz__err">
             @Html.ValidationMessageFor(m => m.SelectedOptionCode)
         </div>
 
-        <div class="qz__opts mt-3">
+        <div class="qz__opts">
             @for (int i = 0; i < Model.Options.Count; i++)
             {
                 var opt = Model.Options[i];
@@ -40,22 +47,31 @@
                            name="SelectedOptionCode"
                            value="@opt.Code"
                     @(Model.SelectedOptionCode == opt.Code ? "checked" : "") />
-                    <span>@opt.TextAr</span>
+
+                    <span class="qz__optText">@opt.TextAr</span>
                 </label>
             }
         </div>
 
-        <div class="qz__actions mt-4">
+        <div class="qz__actions">
+            <button type="submit"
+                    name="nav"
+                    value="next"
+                    class="qz__btn qz__btn--primary"
+                    id="nextBtn"
+                    disabled>
+                @(Model.IsLast ? "إنهاء" : "متابعة")
+            </button>
+
             @if (Model.CanGoBack)
             {
-                <button type="submit" name="nav" value="back" class="btn btn-outline-secondary">
-                    السابق
+                <button type="submit"
+                        name="nav"
+                        value="back"
+                        class="qz__btn qz__btn--ghost">
+                    رجوع للخطوة السابقة
                 </button>
             }
-
-            <button type="submit" name="nav" value="next" class="btn btn-success" id="nextBtn" disabled>
-                @(Model.IsLast ? "إنهاء" : "التالي")
-            </button>
         </div>
     </form>
 </section>

@@ -88,6 +88,8 @@ namespace Aoun.Services
      ?? TryEvaluateR8(context)
      ?? BuildFallbackResult(context);
 
+        ApplyConfidence(result, context);
+
             return result;
         }
 
@@ -782,7 +784,12 @@ namespace Aoun.Services
         {
             decimal total = 0m;
 
-            foreach (var conflict in context.Conflicts)
+            var uniqueConflicts = context.Conflicts
+                .GroupBy(c => c.ConflictType)
+                .Select(g => g.First())
+                .ToList();
+
+            foreach (var conflict in uniqueConflicts)
             {
                 total += conflict.ConflictType switch
                 {
