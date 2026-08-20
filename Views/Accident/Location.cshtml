@@ -99,7 +99,10 @@
             // ===== 1) التاريخ/الوقت من الجهاز =====
             const now = new Date();
 
-            const isoDate = now.toISOString().slice(0, 10);
+            const isoDate =
+                now.getFullYear() + "-" +
+                String(now.getMonth() + 1).padStart(2, "0") + "-" +
+                String(now.getDate()).padStart(2, "0");
 
             const hh = String(now.getHours()).padStart(2, '0');
             const mm = String(now.getMinutes()).padStart(2, '0');

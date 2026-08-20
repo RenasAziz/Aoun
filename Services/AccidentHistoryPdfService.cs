@@ -138,7 +138,7 @@ namespace Aoun.Services
 
                     col.Item().Element(x => ComposeInfoRow(x, "نوع الحادث المحدد", model.AccidentClassification));
                     col.Item().Element(x => ComposeInfoRow(x, "القاعدة المطبقة", model.RuleId));
-                    col.Item().Element(x => ComposeInfoRow(x, "مستوى الثقة", model.ConfidencePercentText));
+                    col.Item().Element(x => ComposeInfoRow(x, "مؤشر الاتساق", model.ConfidencePercentText));
                     col.Item().Element(x => ComposeInfoRow(x, model.OtherDriverLabel, $"{model.OtherDriverFaultPercent}%"));
                     col.Item().Element(x => ComposeInfoRow(x, model.CurrentDriverLabel, $"{model.CurrentDriverFaultPercent}%"));
 

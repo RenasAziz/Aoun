@@ -906,10 +906,10 @@ namespace Aoun.Services
 
         private string ToConfidenceLabel(decimal score)
         {
-            if (score >= 0.80m) return "مرتفعة";
-            if (score >= 0.60m) return "متوسطة";
-            if (score >= 0.40m) return "منخفضة";
-            return "منخفضة جدًا";
+            if (score >= 0.80m) return "مرتفع";
+            if (score >= 0.60m) return "متوسط";
+            if (score >= 0.40m) return "منخفض";
+            return "منخفض جدًا";
         }
     }
 }
